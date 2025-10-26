@@ -116,14 +116,40 @@ npm run dev
 ```
 
 ## Deployment
-Website ini dioptimalkan untuk deployment di Replit Deployments. Tidak menggunakan Docker karena environment Replit tidak mendukung containerization.
 
-### Deployment Steps:
+### Option 1: Replit Deployments
+Website ini dioptimalkan untuk deployment di Replit Deployments.
+
+**Deployment Steps:**
 1. Pastikan semua Firebase environment variables sudah diset
 2. Klik tombol "Deploy" di Replit
 3. Tambahkan deployment domain ke Firebase Console:
    - Go to Firebase Console > Authentication > Settings > Authorized domains
    - Tambahkan domain `.replit.app` atau custom domain
+
+### Option 2: Railway Deployment (Docker)
+Project sudah dilengkapi dengan konfigurasi Docker untuk deployment di Railway.
+
+**Files:**
+- `Dockerfile` - Multi-stage build yang optimized (Alpine-based, ~100MB)
+- `.dockerignore` - Exclude unnecessary files
+- `railway.toml` - Railway configuration
+- `DEPLOYMENT.md` - Panduan lengkap deployment
+
+**Quick Deploy:**
+1. Push ke GitHub repository
+2. Login ke Railway.app
+3. Deploy from GitHub repo
+4. Set environment variables di Railway Dashboard
+5. Railway akan otomatis build & deploy
+
+**Server Configuration:**
+- Server sudah bind ke `0.0.0.0` (required untuk Railway)
+- Dynamic PORT dari `process.env.PORT`
+- Production-ready dengan non-root user
+- Graceful shutdown support
+
+Lihat `DEPLOYMENT.md` untuk panduan lengkap.
 
 ## User Roles
 ### Creating Admin User
