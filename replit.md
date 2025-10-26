@@ -159,7 +159,21 @@ Untuk membuat user dengan role admin:
 3. Edit document user tersebut dan ubah field `role` menjadi `"admin"`
 4. User akan otomatis diredirect ke admin panel saat login
 
-## Recent Changes (December 2024)
+## Recent Changes
+
+### PWA Implementation (October 2024)
+- **Progressive Web App**: SeaVice sekarang bisa di-install seperti native app
+  - Installable di mobile (Android/iOS) dan desktop
+  - Offline support dengan Service Worker caching
+  - Auto-update notification dengan PWAUpdatePrompt component
+  - Runtime caching untuk Google Fonts dan Firebase Storage
+  - Custom PWA icons dengan branding orange SeaVice
+  - Manifest configuration dengan theme color #FF6B35
+  - TypeScript support untuk virtual PWA modules
+  - Production-ready untuk Replit dan Railway deployment
+  - See `PWA.md` untuk dokumentasi lengkap
+
+### December 2024
 - **Service Detail Page**: Halaman detail layanan dengan informasi lengkap, fitur, harga, dan tombol pemesanan
 - **Order System**: Complete order schema dengan status lifecycle (pending, processing, completed, cancelled), Firestore CRUD operations
 - **Order Placement Flow**: Order dialog dengan form validasi, integrasi Firebase, redirect ke halaman konfirmasi

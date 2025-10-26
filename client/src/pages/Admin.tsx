@@ -28,10 +28,11 @@ import { insertServiceSchema, type Service, type InsertService } from "@shared/s
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { getAllServices, createService, updateService, deleteService } from "@/lib/services";
-import { Plus, Edit, Trash2, Package, Loader2, Ticket } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Loader2, Ticket, Bell } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminVouchers from "./AdminVouchers";
 import AdminOrders from "./AdminOrders";
+import AdminNotifications from "./AdminNotifications";
 
 export default function Admin() {
   const { toast } = useToast();
@@ -197,6 +198,10 @@ export default function Admin() {
             <TabsTrigger value="vouchers" data-testid="tab-vouchers">
               <Ticket className="h-4 w-4 mr-2" />
               Voucher
+            </TabsTrigger>
+            <TabsTrigger value="notifications" data-testid="tab-notifications">
+              <Bell className="h-4 w-4 mr-2" />
+              Notifikasi
             </TabsTrigger>
           </TabsList>
 
@@ -518,6 +523,10 @@ export default function Admin() {
 
           <TabsContent value="vouchers">
             <AdminVouchers />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <AdminNotifications />
           </TabsContent>
         </Tabs>
       </div>

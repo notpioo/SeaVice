@@ -173,3 +173,31 @@ export const updateVoucherSchema = z.object({
   message: "Persentase diskon maksimal 100%",
   path: ["discountValue"]
 });
+
+// Notification Schema
+export const selectNotificationSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, "Judul notifikasi harus diisi"),
+  body: z.string().min(1, "Isi notifikasi harus diisi"),
+  imageUrl: z.string().url().optional().or(z.literal("")),
+  actionUrl: z.string().optional().or(z.literal("")),
+  targetType: z.enum(["all", "user"]),
+  userId: z.string().optional(),
+  status: z.enum(["draft", "scheduled", "sent", "failed"]),
+  scheduledAt: z.date().optional().nullable(),
+  sentAt: z.date().optional().nullable(),
+  createdAt: z.date(),
+  deliveredCount: z.number().default(0),
+  clickedCount: z.number().default(0),
+});
+
+export type Notification = z.infer<typeof selectNotificationSchema>;
+
+export const insertNotificationSchema = selectNotificationSchema.omit({ 
+  id: true, 
+  createdAt: true,
+  sentAt: true,
+  deliveredCount: true,
+  clickedCount: true,
+});
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
