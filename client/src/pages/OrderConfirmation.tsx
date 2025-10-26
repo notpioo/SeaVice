@@ -63,7 +63,7 @@ export default function OrderConfirmation() {
       completed: "default",
       cancelled: "destructive",
     };
-    
+
     const labels: Record<string, string> = {
       pending: "Menunggu Konfirmasi",
       processing: "Sedang Dikerjakan",
@@ -79,7 +79,7 @@ export default function OrderConfirmation() {
   };
 
   return (
-    <div className="min-h-screen py-16 md:py-24">
+    <div className="min-h-screen py-8 md:py-12">
       <div className="max-w-2xl mx-auto px-4 md:px-8">
         {/* Success Icon */}
         <div className="text-center mb-8">

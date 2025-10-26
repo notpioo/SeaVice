@@ -15,7 +15,7 @@ export default function Services() {
   });
 
   return (
-    <div className="min-h-screen py-16 md:py-24">
+    <div className="min-h-screen py-8 md:py-12">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">
@@ -29,83 +29,94 @@ export default function Services() {
 
         {/* Services Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-48 w-full rounded-lg" />
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Skeleton className="h-6 w-3/4" />
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="h-40 w-full" />
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
                   <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-10 w-full" />
-                </CardFooter>
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-9 w-full mt-3" />
+                </div>
               </Card>
             ))}
           </div>
         ) : services && services.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {services.map((service) => (
-              <Card key={service.id} className="flex flex-col hover-elevate transition-all" data-testid={`card-service-${service.id}`}>
-                <CardHeader className="space-y-0 pb-4">
+              <Card key={service.id} className="group flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1" data-testid={`card-service-${service.id}`}>
+                {/* Compact Image */}
+                <Link href={`/layanan/${service.id}`} className="block">
                   {service.imageUrl ? (
-                    <div className="aspect-video rounded-lg overflow-hidden mb-4 bg-muted">
+                    <div className="aspect-[4/3] overflow-hidden bg-muted">
                       <img
                         src={service.imageUrl}
                         alt={service.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                   ) : (
-                    <div className="aspect-video rounded-lg bg-gradient-to-br from-primary/10 to-orange-600/10 flex items-center justify-center mb-4">
-                      <Package className="h-16 w-16 text-primary/40" />
+                    <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-orange-600/10 flex items-center justify-center">
+                      <Package className="h-12 w-12 text-primary/40" />
                     </div>
                   )}
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-lg leading-tight" data-testid={`text-title-${service.id}`}>
-                      {service.title}
-                    </h3>
-                    <Badge variant="secondary" className="flex-shrink-0">
+                </Link>
+                
+                {/* Compact Content */}
+                <div className="flex-1 flex flex-col p-4">
+                  {/* Title & Category */}
+                  <div className="mb-2">
+                    <Badge variant="secondary" className="text-xs mb-2">
                       {service.category}
                     </Badge>
+                    <Link href={`/layanan/${service.id}`}>
+                      <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors" data-testid={`text-title-${service.id}`}>
+                        {service.title}
+                      </h3>
+                    </Link>
                   </div>
-                </CardHeader>
-                
-                <CardContent className="flex-1 space-y-4">
-                  <p className="text-sm text-muted-foreground line-clamp-3" data-testid={`text-description-${service.id}`}>
+                  
+                  {/* Description */}
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3" data-testid={`text-description-${service.id}`}>
                     {service.description}
                   </p>
                   
-                  <div className="space-y-2">
-                    {service.features.slice(0, 3).map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
+                  {/* Features - Show only 2 */}
+                  <div className="space-y-1.5 mb-3 flex-1">
+                    {service.features.slice(0, 2).map((feature, idx) => (
+                      <div key={idx} className="flex items-start gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
+                        <span className="text-xs line-clamp-1">{feature}</span>
                       </div>
                     ))}
+                    {service.features.length > 2 && (
+                      <p className="text-xs text-muted-foreground pl-5">
+                        +{service.features.length - 2} lainnya
+                      </p>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
-                    <Clock className="h-4 w-4" />
+                  {/* Delivery Time */}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3 pb-3 border-b">
+                    <Clock className="h-3.5 w-3.5" />
                     <span>{service.deliveryTime}</span>
                   </div>
-                </CardContent>
-                
-                <CardFooter className="flex items-center justify-between gap-4 pt-4 border-t">
-                  <div>
-                    <p className="text-2xl font-bold text-primary" data-testid={`text-price-${service.id}`}>
-                      Rp {service.price.toLocaleString('id-ID')}
-                    </p>
+                  
+                  {/* Price & CTA */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-lg font-bold text-primary" data-testid={`text-price-${service.id}`}>
+                        Rp {service.price.toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                    <Link href={`/layanan/${service.id}`}>
+                      <Button size="sm" className="h-8 text-xs" data-testid={`button-order-${service.id}`}>
+                        Pesan
+                      </Button>
+                    </Link>
                   </div>
-                  <Link href={`/layanan/${service.id}`}>
-                    <Button size="sm" data-testid={`button-order-${service.id}`}>
-                      Lihat Detail
-                    </Button>
-                  </Link>
-                </CardFooter>
+                </div>
               </Card>
             ))}
           </div>

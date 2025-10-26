@@ -21,11 +21,12 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const [location] = useLocation();
   const isAuthPage = location === "/login" || location === "/register";
+  const isServiceDetailPage = location.startsWith("/layanan/") && location !== "/layanan";
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAuthPage && <Navbar />}
-      <main className={!isAuthPage ? "pt-16 flex-1 flex flex-col" : "flex-1"}>
+      {!isAuthPage && <Navbar className={isServiceDetailPage ? "md:block hidden" : ""} />}
+      <main className={!isAuthPage ? (isServiceDetailPage ? "md:pt-16 flex-1 flex flex-col" : "pt-16 flex-1 flex flex-col") : "flex-1"}>
         <Switch>
           <Route path="/" component={Landing} />
           <Route path="/login" component={Login} />

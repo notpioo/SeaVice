@@ -133,7 +133,7 @@ export default function Orders() {
   }
 
   return (
-    <div className="min-h-screen py-16 md:py-24">
+    <div className="min-h-screen py-8 md:py-12">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Header */}
         <div className="mb-8">
