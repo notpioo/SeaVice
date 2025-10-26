@@ -37,15 +37,25 @@ railway up
 
 ### 3. Environment Variables di Railway
 
-Setelah deploy, set environment variables di Railway Dashboard:
+**PENTING:** Set environment variables SEBELUM deploy, karena Firebase config dibutuhkan saat build time!
 
-**Required Variables:**
-- `NODE_ENV=production`
+Di Railway Dashboard → Variables, tambahkan:
+
+**Required Variables (Build Time):**
+```
+VITE_FIREBASE_API_KEY=AIzaSyCmGVvlQ8QciED-R6EShzOxuGmZ_hiHKO4
+VITE_FIREBASE_APP_ID=1:243409020515:web:cfe39747aa24eaacd43a56
+VITE_FIREBASE_PROJECT_ID=seavice-a25e0
+```
+
+**Auto-injected by Railway:**
 - `PORT` (otomatis di-inject oleh Railway)
+- `NODE_ENV=production` (optional, sudah di-set di Dockerfile)
 
-**Optional Variables (sesuai kebutuhan app):**
-- `DATABASE_URL` (jika pakai database)
-- API keys atau secret lainnya
+**Catatan Penting:**
+- Semua `VITE_*` variables harus di-set SEBELUM build
+- Railway otomatis pass semua variables ke Docker build sebagai `--build-arg`
+- Jika update variables, klik "Redeploy" untuk rebuild dengan values yang baru
 
 ### 4. Database (Optional)
 
@@ -83,21 +93,36 @@ Setelah deploy:
 
 ## Troubleshooting
 
+### Halaman Blank / White Screen
+**Penyebab:** Environment variables Firebase tidak tersedia saat build time
+
+**Solusi:**
+1. Pastikan semua `VITE_*` variables sudah di-set di Railway Dashboard
+2. Klik "Redeploy" untuk rebuild dengan variables yang baru
+3. Cek logs: Railway Dashboard → Deployments → View Logs
+4. Pastikan tidak ada error saat `npm run build`
+
 ### "Cannot GET /"
 - Pastikan build berhasil (cek Railway logs)
-- Verifikasi `dist` folder ter-generate dengan benar
+- Verifikasi `dist/public` folder ter-generate dengan benar
+- Check browser console untuk error messages
+
+### Build Gagal dengan "Environment Variable Undefined"
+**Solusi:**
+- Set semua required variables di Railway Dashboard → Variables
+- Railway otomatis inject variables sebagai build args
+- Redeploy setelah set variables
 
 ### "Port already in use"
 - Railway inject PORT otomatis, tidak perlu hardcode
+- Server sudah configured untuk `process.env.PORT`
 
-### Build Gagal
-- Cek Railway build logs
-- Pastikan semua dependencies ada di `package.json`
-- Verifikasi build script: `npm run build`
-
-### Environment Variables Tidak Terdeteksi
-- Set di Railway Dashboard → Variables
-- Restart deployment setelah update variables
+### Firebase Authentication Tidak Kerja
+**Solusi:**
+1. Add Railway domain ke Firebase Console
+2. Go to: Firebase Console → Authentication → Settings → Authorized domains
+3. Tambahkan: `*.up.railway.app` atau custom domain Anda
+4. Save dan test lagi
 
 ## Monitoring
 

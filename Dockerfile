@@ -11,6 +11,17 @@ RUN npm ci
 # Builder stage - build the application
 FROM base AS builder
 WORKDIR /app
+
+# Declare build-time arguments for Firebase config
+ARG VITE_FIREBASE_API_KEY
+ARG VITE_FIREBASE_APP_ID
+ARG VITE_FIREBASE_PROJECT_ID
+
+# Convert to ENV so Vite can use them during build
+ENV VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY \
+    VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID \
+    VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
