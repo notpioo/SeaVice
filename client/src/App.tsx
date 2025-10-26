@@ -34,12 +34,12 @@ function Router() {
           <Route path="/layanan" component={Services} />
           <Route path="/layanan/:id" component={ServiceDetail} />
           <Route path="/pesanan/:orderId">
-            <ProtectedRoute requiredRole="user">
+            <ProtectedRoute>
               <OrderConfirmation />
             </ProtectedRoute>
           </Route>
           <Route path="/pesanan">
-            <ProtectedRoute requiredRole="user">
+            <ProtectedRoute>
               <Orders />
             </ProtectedRoute>
           </Route>

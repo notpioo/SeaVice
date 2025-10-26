@@ -23,7 +23,11 @@ function mapDocToOrder(id: string, data: DocumentData): Order {
     userId: data.userId,
     serviceId: data.serviceId,
     serviceName: data.serviceName,
+    originalPrice: data.originalPrice,
     servicePrice: data.servicePrice,
+    voucherCode: data.voucherCode,
+    discountAmount: data.discountAmount,
+    finalPrice: data.finalPrice,
     status: data.status,
     notes: data.notes,
     orderDate: data.orderDate?.toDate(),
@@ -74,14 +78,25 @@ export async function getAllOrders(): Promise<Order[]> {
 
 export async function getUserOrders(userId: string): Promise<Order[]> {
   try {
+    console.log("getUserOrders called with userId:", userId); // Debug log
     const q = query(
       collection(db, ORDERS_COLLECTION), 
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      where("userId", "==", userId)
     );
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => mapDocToOrder(doc.id, doc.data()));
+    console.log("Query snapshot size:", querySnapshot.size); // Debug log
+    const orders = querySnapshot.docs.map(doc => {
+      console.log("Order doc:", doc.id, doc.data()); // Debug log
+      return mapDocToOrder(doc.id, doc.data());
+    });
+    
+    // Sort by createdAt descending on client-side
+    return orders.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
   } catch (error) {
     console.error("Error getting user orders:", error);
     throw new Error("Gagal mengambil data pesanan user");

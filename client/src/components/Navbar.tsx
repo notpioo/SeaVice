@@ -30,6 +30,7 @@ export function Navbar({ className = "" }: { className?: string }) {
     ? [
         { href: "/admin", label: "Admin Panel" },
         { href: "/layanan", label: "Layanan" },
+        { href: "/pesanan", label: "Pesanan Saya" },
       ]
     : user
     ? [

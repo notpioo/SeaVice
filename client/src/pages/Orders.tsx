@@ -34,7 +34,13 @@ export default function Orders() {
 
   const { data: allOrders, isLoading } = useQuery<Order[]>({
     queryKey: ["orders", user?.id],
-    queryFn: () => (user ? getUserOrders(user.id) : Promise.resolve([])),
+    queryFn: async () => {
+      if (!user) return [];
+      console.log("Fetching orders for userId:", user.id); // Debug log
+      const orders = await getUserOrders(user.id);
+      console.log("Orders fetched:", orders); // Debug log
+      return orders;
+    },
     enabled: !!user,
   });
 

@@ -11,7 +11,8 @@ import {
   Clock, 
   Package,
   ArrowRight,
-  Calendar
+  Calendar,
+  Ticket
 } from "lucide-react";
 import type { Order } from "@shared/schema";
 
@@ -115,9 +116,43 @@ export default function OrderConfirmation() {
                 <p className="font-medium mb-1" data-testid="text-service-name">
                   {order.serviceName}
                 </p>
-                <p className="text-2xl font-bold text-primary" data-testid="text-service-price">
-                  Rp {order.servicePrice.toLocaleString('id-ID')}
-                </p>
+                <div className="space-y-2 mt-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total Harga</span>
+                    <span data-testid="text-original-price">
+                      Rp {order.originalPrice.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                  
+                  {order.voucherCode && order.discountAmount && order.discountAmount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                        <span className="flex items-center gap-1">
+                          <Ticket className="h-3 w-3" />
+                          Diskon ({order.voucherCode})
+                        </span>
+                        <span data-testid="text-discount">
+                          - Rp {order.discountAmount.toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                        <span>Total Bayar</span>
+                        <span className="text-primary" data-testid="text-final-price">
+                          Rp {order.finalPrice.toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  
+                  {(!order.voucherCode || !order.discountAmount || order.discountAmount === 0) && (
+                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                      <span>Total Bayar</span>
+                      <span className="text-primary" data-testid="text-final-price">
+                        Rp {order.finalPrice.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

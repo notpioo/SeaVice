@@ -4,11 +4,13 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useParams } from "wouter";
 import { getAllServices } from "@/lib/services";
 import { createOrder } from "@/lib/orders";
+import { validateVoucher, incrementVoucherUsage } from "@/lib/vouchers";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +19,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   Form,
   FormControl,
@@ -40,11 +51,15 @@ import {
   Minus,
   Plus,
   Loader2,
+  Ticket,
+  Check,
 } from "lucide-react";
-import type { Service } from "@shared/schema";
+import type { Service, Voucher, InsertOrder } from "@shared/schema";
+import { useMediaQuery } from 'usehooks-ts';
 
 const orderFormSchema = z.object({
   notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
+  voucherCode: z.string().optional(),
 });
 
 type OrderFormData = z.infer<typeof orderFormSchema>;
@@ -57,6 +72,11 @@ export default function ServiceDetail() {
   const { toast } = useToast();
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const { data: services, isLoading } = useQuery<Service[]>({
     queryKey: ["services"],
@@ -101,25 +121,89 @@ export default function ServiceDetail() {
     setIsOrderDialogOpen(true);
   };
 
-  const onSubmit = (data: OrderFormData) => {
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim() || !service) return;
+
+    setIsCheckingVoucher(true);
+    try {
+      const validation = await validateVoucher(voucherCode.toUpperCase(), service.price * quantity);
+
+      if (validation.valid && validation.voucher && validation.discountAmount) {
+        setAppliedVoucher(validation.voucher);
+        setDiscountAmount(validation.discountAmount);
+        toast({
+          title: "Voucher Diterapkan!",
+          description: `Anda mendapat diskon Rp ${validation.discountAmount.toLocaleString("id-ID")}`,
+        });
+      } else {
+        toast({
+          title: "Voucher Tidak Valid",
+          description: validation.message || "Kode voucher tidak dapat digunakan",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Gagal Memvalidasi Voucher",
+        description: "Terjadi kesalahan saat memvalidasi voucher",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingVoucher(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setDiscountAmount(0);
+    setVoucherCode("");
+  };
+
+  const onSubmit = async (values: OrderFormData) => {
     if (!user || !service) return;
 
-    orderMutation.mutate({
-      userId: user.id,
-      serviceId: service.id,
-      serviceName: service.title,
-      servicePrice: service.price * quantity,
-      status: "pending",
-      notes: data.notes,
-    });
+    const originalPrice = service.price * quantity;
+    const finalPrice = originalPrice - discountAmount;
+
+    console.log("Creating order with userId:", user.id);
+    
+    try {
+      const orderData: InsertOrder = {
+        userId: user.id,
+        serviceId: service.id,
+        serviceName: service.title,
+        originalPrice: originalPrice,
+        servicePrice: finalPrice,
+        voucherCode: appliedVoucher?.code,
+        discountAmount: discountAmount > 0 ? discountAmount : undefined,
+        finalPrice: finalPrice,
+        status: "pending",
+        notes: values.notes,
+      };
+
+      const newOrder = await orderMutation.mutateAsync(orderData);
+      console.log("Order created:", newOrder);
+
+      if (appliedVoucher) {
+        await incrementVoucherUsage(appliedVoucher.id);
+      }
+    } catch (error) {
+      console.error("Order submission error:", error);
+    }
   };
 
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
+    if (appliedVoucher) {
+      handleRemoveVoucher();
+    }
   };
 
   const decrementQuantity = () => {
     setQuantity(prev => prev > 1 ? prev - 1 : 1);
+    if (appliedVoucher) {
+      handleRemoveVoucher();
+    }
   };
 
   if (isLoading) {
@@ -176,10 +260,10 @@ export default function ServiceDetail() {
             {/* Overlay Back Button */}
             <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/40 to-transparent">
               <Link href="/layanan">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-full bg-white/90 hover:bg-white text-black shadow-md" 
+                  className="h-9 w-9 rounded-full bg-white/90 hover:bg-white text-black shadow-md"
                   data-testid="button-back"
                 >
                   <ArrowLeft className="h-5 w-5" />
@@ -193,10 +277,10 @@ export default function ServiceDetail() {
             {/* Overlay Back Button */}
             <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/40 to-transparent">
               <Link href="/layanan">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-full bg-white/90 hover:bg-white text-black shadow-md" 
+                  className="h-9 w-9 rounded-full bg-white/90 hover:bg-white text-black shadow-md"
                   data-testid="button-back"
                 >
                   <ArrowLeft className="h-5 w-5" />
@@ -349,9 +433,9 @@ export default function ServiceDetail() {
                   <h3 className="font-semibold mb-3">Yang Anda Dapatkan:</h3>
                   <div className="space-y-2">
                     {service.features.map((feature, idx) => (
-                      <div 
-                        key={idx} 
-                        className="flex items-start gap-2" 
+                      <div
+                        key={idx}
+                        className="flex items-start gap-2"
                         data-testid={`text-feature-${idx}`}
                       >
                         <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
@@ -473,87 +557,350 @@ export default function ServiceDetail() {
         </div>
       </div>
 
-      {/* Order Dialog */}
-      <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-        <DialogContent className="sm:max-w-md" data-testid="dialog-order">
-          <DialogHeader>
-            <DialogTitle>Konfirmasi Pesanan</DialogTitle>
-            <DialogDescription>
-              Pastikan detail pesanan Anda sudah benar sebelum melanjutkan.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Layanan:</p>
-              <p className="text-sm text-muted-foreground">{service?.title}</p>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Jumlah:</p>
-              <p className="text-sm text-muted-foreground">{quantity}x</p>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Total Harga:</p>
-              <p className="text-xl font-bold text-primary">
-                Rp {(service?.price * quantity).toLocaleString('id-ID')}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Waktu Pengerjaan:</p>
-              <p className="text-sm text-muted-foreground">{service?.deliveryTime}</p>
-            </div>
+      {/* Order Dialog - Mobile (Drawer) */}
+      {isMobile ? (
+        <Drawer open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader className="text-left">
+              <DrawerTitle>Konfirmasi Pesanan</DrawerTitle>
+              <DrawerDescription>
+                Pastikan detail pesanan Anda sudah benar sebelum melanjutkan.
+              </DrawerDescription>
+            </DrawerHeader>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Catatan Tambahan (Opsional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Tambahkan catatan atau instruksi khusus untuk pesanan Anda..."
-                          className="resize-none"
-                          rows={4}
-                          data-testid="input-notes"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <form onSubmit={form.handleSubmit(onSubmit)} className="px-4">
+                <div className="space-y-3 overflow-y-auto max-h-[50vh] pb-4">
+                  {/* Service Info */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Layanan:</p>
+                    <p className="text-sm text-muted-foreground">{service?.title}</p>
+                  </div>
 
-                <DialogFooter className="gap-2 sm:gap-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsOrderDialogOpen(false)}
-                    disabled={orderMutation.isPending}
-                    data-testid="button-cancel-order"
-                  >
-                    Batal
-                  </Button>
+                  {/* Quantity Selector */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Jumlah:</p>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        onClick={decrementQuantity}
+                        disabled={quantity <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-12 text-center font-medium">{quantity}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        onClick={incrementQuantity}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Total Price */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Total Harga:</p>
+                    <p className="text-xl font-bold text-primary">
+                      Rp {(service?.price * quantity).toLocaleString('id-ID')}
+                    </p>
+                  </div>
+
+                  {/* Voucher Section */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Ticket className="h-4 w-4" />
+                      Kode Voucher (Opsional)
+                    </p>
+                    {!appliedVoucher ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={voucherCode}
+                          onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                          placeholder="Masukkan kode voucher"
+                          className="uppercase"
+                          data-testid="input-voucher-code"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleApplyVoucher}
+                          disabled={!voucherCode.trim() || isCheckingVoucher}
+                          size="sm"
+                          data-testid="button-apply-voucher"
+                        >
+                          {isCheckingVoucher ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Gunakan"
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <div>
+                            <p className="text-sm font-medium text-green-900 dark:text-green-100">{appliedVoucher.code}</p>
+                            <p className="text-xs text-green-700 dark:text-green-300">
+                              Diskon Rp {discountAmount.toLocaleString("id-ID")}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveVoucher}
+                          className="h-7"
+                          data-testid="button-remove-voucher"
+                        >
+                          Hapus
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Final Price */}
+                  {discountAmount > 0 && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span>Rp {(service?.price * quantity).toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                        <span>Diskon Voucher</span>
+                        <span>- Rp {discountAmount.toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-lg">
+                        <span>Total Bayar</span>
+                        <span className="text-primary">
+                          Rp {((service?.price * quantity) - discountAmount).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Delivery Time */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Waktu Pengerjaan:</p>
+                    <p className="text-sm text-muted-foreground">{service?.deliveryTime}</p>
+                  </div>
+
+                  {/* Notes Field */}
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catatan Tambahan (Opsional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Tambahkan catatan atau instruksi khusus untuk pesanan Anda..."
+                            className="resize-none"
+                            rows={3}
+                            {...field}
+                            data-testid="textarea-notes"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <DrawerFooter className="px-0 pt-4">
                   <Button
                     type="submit"
                     disabled={orderMutation.isPending}
                     data-testid="button-confirm-order"
+                    className="w-full"
                   >
                     {orderMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Konfirmasi Pesanan
                   </Button>
-                </DialogFooter>
+                  <DrawerClose asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={orderMutation.isPending}
+                      data-testid="button-cancel-order"
+                      className="w-full"
+                    >
+                      Batal
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
               </form>
             </Form>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        /* Order Dialog - Desktop */
+        <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <div className="max-h-[80vh] overflow-y-auto px-1">
+              <DialogHeader>
+                <DialogTitle>Konfirmasi Pesanan</DialogTitle>
+                <DialogDescription>
+                  Pastikan detail pesanan Anda sudah benar sebelum melanjutkan.
+                </DialogDescription>
+              </DialogHeader>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                  <div className="space-y-3 p-4 rounded-lg bg-muted/50">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Layanan:</p>
+                      <p className="text-sm text-muted-foreground">{service?.title}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Jumlah:</p>
+                      <p className="text-sm text-muted-foreground">{quantity}x</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Total Harga:</p>
+                      <p className="text-xl font-bold text-primary">
+                        Rp {(service?.price * quantity).toLocaleString('id-ID')}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Waktu Pengerjaan:</p>
+                      <p className="text-sm text-muted-foreground">{service?.deliveryTime}</p>
+                    </div>
+                  </div>
+
+                  {/* Voucher Section */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Ticket className="h-4 w-4" />
+                      Kode Voucher (Opsional)
+                    </p>
+                    {!appliedVoucher ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={voucherCode}
+                          onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                          placeholder="Masukkan kode voucher"
+                          className="uppercase"
+                          data-testid="input-voucher-code-desktop"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleApplyVoucher}
+                          disabled={!voucherCode.trim() || isCheckingVoucher}
+                          size="sm"
+                          data-testid="button-apply-voucher-desktop"
+                        >
+                          {isCheckingVoucher ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Gunakan"
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <div>
+                            <p className="text-sm font-medium text-green-900 dark:text-green-100">{appliedVoucher.code}</p>
+                            <p className="text-xs text-green-700 dark:text-green-300">
+                              Diskon Rp {discountAmount.toLocaleString("id-ID")}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveVoucher}
+                          className="h-7"
+                          data-testid="button-remove-voucher-desktop"
+                        >
+                          Hapus
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Final Price */}
+                  {discountAmount > 0 && (
+                    <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span>Rp {(service?.price * quantity).toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                        <span>Diskon Voucher</span>
+                        <span>- Rp {discountAmount.toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                        <span>Total Bayar</span>
+                        <span className="text-primary">
+                          Rp {((service?.price * quantity) - discountAmount).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catatan Tambahan (Opsional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Tambahkan catatan atau instruksi khusus untuk pesanan Anda..."
+                            className="resize-none"
+                            rows={4}
+                            {...field}
+                            data-testid="textarea-notes"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsOrderDialogOpen(false)}
+                      disabled={orderMutation.isPending}
+                      data-testid="button-cancel-order"
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={orderMutation.isPending}
+                      data-testid="button-confirm-order"
+                    >
+                      {orderMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Konfirmasi Pesanan
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -65,7 +65,11 @@ export interface Order {
   userId: string;
   serviceId: string;
   serviceName: string;
+  originalPrice: number;
   servicePrice: number;
+  voucherCode?: string;
+  discountAmount?: number;
+  finalPrice: number;
   status: OrderStatus;
   notes?: string;
   orderDate: Date;
@@ -78,7 +82,11 @@ export const insertOrderSchema = z.object({
   userId: z.string().min(1, "User ID harus diisi"),
   serviceId: z.string().min(1, "Service ID harus diisi"),
   serviceName: z.string().min(1, "Nama layanan harus diisi"),
+  originalPrice: z.number().min(0, "Harga original harus positif"),
   servicePrice: z.number().min(0, "Harga harus positif"),
+  voucherCode: z.string().optional(),
+  discountAmount: z.number().min(0).optional(),
+  finalPrice: z.number().min(0, "Harga final harus positif"),
   status: orderStatusSchema.default("pending"),
   notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
   deliveryDate: z.string().optional(),
@@ -93,3 +101,75 @@ export const updateOrderSchema = z.object({
 });
 
 export type UpdateOrder = z.infer<typeof updateOrderSchema>;
+
+// Voucher schema for discount vouchers
+export const discountTypeSchema = z.enum(["percentage", "fixed"]);
+export type DiscountType = z.infer<typeof discountTypeSchema>;
+
+export interface Voucher {
+  id: string;
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  isActive: boolean;
+  minPurchase: number;
+  maxDiscount?: number;
+  usageLimit: number;
+  usedCount: number;
+  expiryDate: Date;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const insertVoucherSchema = z.object({
+  code: z.string()
+    .min(3, "Kode voucher minimal 3 karakter")
+    .max(20, "Kode voucher maksimal 20 karakter")
+    .regex(/^[A-Z0-9]+$/, "Kode voucher hanya boleh huruf kapital dan angka"),
+  discountType: discountTypeSchema,
+  discountValue: z.number()
+    .min(0, "Nilai diskon harus positif"),
+  isActive: z.boolean().default(true),
+  minPurchase: z.number().min(0, "Minimal pembelian harus positif").default(0),
+  maxDiscount: z.number().min(0, "Maksimal diskon harus positif").optional(),
+  usageLimit: z.number().min(1, "Limit penggunaan minimal 1").default(100),
+  expiryDate: z.string().min(1, "Tanggal kadaluarsa harus diisi"),
+  description: z.string().max(200, "Deskripsi maksimal 200 karakter").optional(),
+}).refine((data) => {
+  if (data.discountType === "percentage" && data.discountValue > 100) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Persentase diskon maksimal 100%",
+  path: ["discountValue"]
+});
+
+export type InsertVoucher = z.infer<typeof insertVoucherSchema>;
+
+export const updateVoucherSchema = z.object({
+  code: z.string()
+    .min(3, "Kode voucher minimal 3 karakter")
+    .max(20, "Kode voucher maksimal 20 karakter")
+    .regex(/^[A-Z0-9]+$/, "Kode voucher hanya boleh huruf kapital dan angka")
+    .optional(),
+  discountType: discountTypeSchema.optional(),
+  discountValue: z.number()
+    .min(0, "Nilai diskon harus positif")
+    .optional(),
+  isActive: z.boolean().optional(),
+  minPurchase: z.number().min(0, "Minimal pembelian harus positif").optional(),
+  maxDiscount: z.number().min(0, "Maksimal diskon harus positif").optional(),
+  usageLimit: z.number().min(1, "Limit penggunaan minimal 1").optional(),
+  expiryDate: z.string().min(1, "Tanggal kadaluarsa harus diisi").optional(),
+  description: z.string().max(200, "Deskripsi maksimal 200 karakter").optional(),
+}).refine((data) => {
+  if (data.discountType === "percentage" && data.discountValue && data.discountValue > 100) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Persentase diskon maksimal 100%",
+  path: ["discountValue"]
+});

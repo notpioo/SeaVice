@@ -27,6 +27,7 @@ SeaVice adalah platform modern untuk jasa servis digital yang menyediakan berbag
 ### Admin Features (Role: Admin)
 - Admin panel untuk mengelola layanan
 - CRUD operations untuk layanan (Create, Read, Update, Delete)
+- Admin voucher management dengan CRUD operations lengkap
 - Dashboard dengan statistics
 - Form management dengan validasi lengkap
 
@@ -36,7 +37,7 @@ SeaVice adalah platform modern untuk jasa servis digital yang menyediakan berbag
 3. **Register** (`/register`) - Registrasi user baru
 4. **Home User** (`/home`) - Dashboard untuk user (Protected, role: user)
 5. **Layanan** (`/layanan`) - Daftar semua layanan yang tersedia
-6. **Admin Panel** (`/admin`) - Manage layanan (Protected, role: admin)
+6. **Admin Panel** (`/admin`) - Manage layanan dan voucher (Protected, role: admin)
 
 ## Firebase Configuration
 Project menggunakan Firebase untuk:
@@ -44,6 +45,8 @@ Project menggunakan Firebase untuk:
 - **Firestore Database**: 
   - Collection `users`: Menyimpan data user dengan field role
   - Collection `services`: Menyimpan data layanan digital
+  - Collection `vouchers`: Menyimpan voucher dengan diskon fixed/percentage
+  - Collection `orders`: Menyimpan pesanan dengan detail harga dan voucher
 
 ### Required Environment Variables
 ```
@@ -66,14 +69,20 @@ client/
 │   ├── lib/
 │   │   ├── firebase.ts   # Firebase initialization
 │   │   ├── auth.ts       # Authentication functions
-│   │   └── services.ts   # Firestore service operations
+│   │   ├── services.ts   # Firestore service operations
+│   │   ├── vouchers.ts   # Voucher CRUD operations
+│   │   └── orders.ts     # Order management
 │   ├── pages/
 │   │   ├── Landing.tsx   # Landing page
 │   │   ├── Login.tsx     # Login page
 │   │   ├── Register.tsx  # Register page
 │   │   ├── Home.tsx      # User home page
 │   │   ├── Services.tsx  # Services listing
-│   │   └── Admin.tsx     # Admin panel
+│   │   ├── ServiceDetail.tsx  # Service detail dengan voucher input
+│   │   ├── Orders.tsx    # User order history
+│   │   ├── OrderConfirmation.tsx  # Konfirmasi pesanan
+│   │   ├── Admin.tsx     # Admin panel (services + vouchers)
+│   │   └── AdminVouchers.tsx  # Voucher management UI
 │   └── App.tsx           # Main app with routing
 shared/
 └── schema.ts             # Shared TypeScript types & Zod schemas
@@ -133,3 +142,12 @@ Untuk membuat user dengan role admin:
 - **Date Handling**: Fixed proper Date object handling untuk Firestore Timestamps
 - **Navigation**: Added "Pesanan" link to navbar untuk user role
 - **Test IDs**: Comprehensive data-testid attributes across all interactive elements
+- **Voucher System** (October 2024):
+  - Complete voucher schema dengan support diskon fixed amount (Rp.) dan percentage (%)
+  - Admin voucher CRUD dengan UI lengkap (create, edit, delete)
+  - Voucher validation di order flow dengan real-time discount calculation
+  - Usage limit tracking dan expiry date enforcement
+  - Minimum purchase requirement validation
+  - Automatic voucher removal ketika quantity berubah untuk mencegah incorrect discount
+  - Order pricing transparency dengan originalPrice, discountAmount, dan finalPrice
+  - Voucher display di order confirmation page
