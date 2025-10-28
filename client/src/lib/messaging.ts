@@ -70,14 +70,6 @@ export async function requestNotificationPermission(): Promise<string | null> {
 
       console.log('✅ FCM Token obtained:', token.substring(0, 30) + '...');
       
-      // Test notification
-      console.log('🧪 Testing notification...');
-      new Notification('SeaVice', {
-        body: 'Notifikasi berhasil diaktifkan!',
-        icon: '/icons/pwa-192x192.png',
-        tag: 'test-notification'
-      });
-      
       return token;
     } else {
       console.warn('⚠️ Notification permission denied or dismissed');
@@ -154,20 +146,22 @@ export async function getUserFCMTokens(userId: string): Promise<string[]> {
 }
 
 // Setup foreground message listener
-export function setupMessageListener(callback: (payload: any) => void) {
+export function setupMessageListener(callback: (payload: any) => void): () => void {
   if (!messaging) {
     console.warn('⚠️ Messaging not initialized, cannot setup listener');
-    return;
+    return () => {};
   }
 
   console.log('✅ Setting up foreground message listener');
 
-  onMessage(messaging, (payload) => {
+  const unsubscribe = onMessage(messaging, (payload) => {
     console.log("📩 [Foreground] Message received:", payload);
     console.log("📩 [Foreground] Title:", payload.notification?.title || payload.data?.title);
     console.log("📩 [Foreground] Body:", payload.notification?.body || payload.data?.body);
     callback(payload);
   });
+
+  return unsubscribe;
 }
 
 // Create notification in Firestore
@@ -243,6 +237,22 @@ export async function deleteNotification(id: string): Promise<void> {
   }
 }
 
+// Delete invalid FCM token from Firestore
+export async function deleteInvalidToken(token: string): Promise<void> {
+  try {
+    const tokensRef = collection(db, "fcmTokens");
+    const q = query(tokensRef, where("token", "==", token));
+    const snapshot = await getDocs(q);
+
+    for (const doc of snapshot.docs) {
+      await deleteDoc(doc.ref);
+      console.log(`🗑️ Deleted invalid token: ${token.substring(0, 20)}...`);
+    }
+  } catch (error) {
+    console.error("Error deleting invalid token:", error);
+  }
+}
+
 // Send push notification via FCM
 export async function sendPushNotification(data: {
   title: string;
@@ -287,6 +297,16 @@ export async function sendPushNotification(data: {
 
     const result = await response.json();
     console.log('✅ Notification sent successfully:', result);
+
+    // Cleanup invalid tokens if any
+    if (result.invalidTokens && result.invalidTokens.length > 0) {
+      console.log(`🧹 Cleaning up ${result.invalidTokens.length} invalid tokens...`);
+      await Promise.all(
+        result.invalidTokens.map((token: string) => deleteInvalidToken(token))
+      );
+      console.log('✅ Invalid tokens cleaned up');
+    }
+
     return result;
   } catch (error) {
     console.error("❌ Error sending push notification:", error);

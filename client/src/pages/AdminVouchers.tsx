@@ -180,20 +180,21 @@ export default function AdminVouchers() {
   const isExpired = (date: Date) => new Date() > date;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2" data-testid="text-title">
+    <div className="min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 break-words" data-testid="text-title">
               Kelola Voucher
             </h1>
-            <p className="text-muted-foreground" data-testid="text-subtitle">
+            <p className="text-sm md:text-base text-muted-foreground break-words" data-testid="text-subtitle">
               Kelola voucher diskon untuk layanan Anda
             </p>
           </div>
           <Button
             onClick={() => handleOpenDialog()}
-            size="lg"
+            size="default"
+            className="flex-shrink-0 w-full md:w-auto"
             data-testid="button-add-voucher"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -202,13 +203,13 @@ export default function AdminVouchers() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Skeleton key={i} className="h-64" data-testid={`skeleton-voucher-${i}`} />
             ))}
           </div>
         ) : vouchers && vouchers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {vouchers.map((voucher) => (
               <Card 
                 key={voucher.id} 
@@ -216,13 +217,13 @@ export default function AdminVouchers() {
                 data-testid={`card-voucher-${voucher.id}`}
               >
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-lg ${voucher.isActive ? 'bg-primary/10' : 'bg-muted'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${voucher.isActive ? 'bg-primary/10' : 'bg-muted'}`}>
                         <Ticket className={`h-5 w-5 ${voucher.isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                       </div>
-                      <div>
-                        <CardTitle className="text-lg font-bold" data-testid={`text-code-${voucher.id}`}>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base md:text-lg font-bold truncate" data-testid={`text-code-${voucher.id}`}>
                           {voucher.code}
                         </CardTitle>
                         <div className="flex gap-2 mt-1">
@@ -296,23 +297,23 @@ export default function AdminVouchers() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                       onClick={() => handleOpenDialog(voucher)}
                       data-testid={`button-edit-${voucher.id}`}
                     >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Edit
+                      <Edit className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <span className="truncate text-xs md:text-sm">Edit</span>
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                       onClick={() => handleDelete(voucher.id)}
                       disabled={deleteMutation.isPending}
                       data-testid={`button-delete-${voucher.id}`}
                     >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Hapus
+                      <Trash2 className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <span className="truncate text-xs md:text-sm">Hapus</span>
                     </Button>
                   </div>
                 </CardContent>

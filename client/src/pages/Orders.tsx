@@ -139,10 +139,10 @@ export default function Orders() {
   }
 
   return (
-    <div className="min-h-screen py-8 md:py-12">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
+    <div className="min-h-screen py-8 md:py-12 overflow-x-hidden w-full">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 overflow-x-hidden w-full">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
             Riwayat Pesanan
           </h1>
@@ -152,53 +152,55 @@ export default function Orders() {
         </div>
 
         {/* Status Filter Bar */}
-        <div className="mb-6 overflow-x-auto">
-          <div className="flex gap-2 pb-2">
-            <Button
-              variant={statusFilter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("all")}
-              data-testid="filter-all"
-              className="whitespace-nowrap"
-            >
-              Semua ({statusCounts.all})
-            </Button>
-            <Button
-              variant={statusFilter === "pending" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("pending")}
-              data-testid="filter-pending"
-              className="whitespace-nowrap"
-            >
-              Pending ({statusCounts.pending})
-            </Button>
-            <Button
-              variant={statusFilter === "processing" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("processing")}
-              data-testid="filter-processing"
-              className="whitespace-nowrap"
-            >
-              Proses ({statusCounts.processing})
-            </Button>
-            <Button
-              variant={statusFilter === "completed" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("completed")}
-              data-testid="filter-completed"
-              className="whitespace-nowrap"
-            >
-              Selesai ({statusCounts.completed})
-            </Button>
-            <Button
-              variant={statusFilter === "cancelled" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("cancelled")}
-              data-testid="filter-cancelled"
-              className="whitespace-nowrap"
-            >
-              Batal ({statusCounts.cancelled})
-            </Button>
+        <div className="mb-6">
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 pb-2">
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("all")}
+                data-testid="filter-all"
+                className="whitespace-nowrap flex-shrink-0"
+              >
+                Semua ({statusCounts.all})
+              </Button>
+              <Button
+                variant={statusFilter === "pending" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("pending")}
+                data-testid="filter-pending"
+                className="whitespace-nowrap flex-shrink-0"
+              >
+                Pending ({statusCounts.pending})
+              </Button>
+              <Button
+                variant={statusFilter === "processing" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("processing")}
+                data-testid="filter-processing"
+                className="whitespace-nowrap flex-shrink-0"
+              >
+                Proses ({statusCounts.processing})
+              </Button>
+              <Button
+                variant={statusFilter === "completed" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("completed")}
+                data-testid="filter-completed"
+                className="whitespace-nowrap flex-shrink-0"
+              >
+                Selesai ({statusCounts.completed})
+              </Button>
+              <Button
+                variant={statusFilter === "cancelled" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("cancelled")}
+                data-testid="filter-cancelled"
+                className="whitespace-nowrap flex-shrink-0"
+              >
+                Batal ({statusCounts.cancelled})
+              </Button>
+            </div>
           </div>
         </div>
 

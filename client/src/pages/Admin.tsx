@@ -177,33 +177,35 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen py-8 md:py-12">
+    <div className="min-h-screen py-8 md:py-12 overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Panel</h1>
-          <p className="text-muted-foreground">Kelola layanan dan voucher SeaVice</p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 break-words">Admin Panel</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Kelola layanan dan voucher SeaVice</p>
         </div>
 
         <Tabs defaultValue="services" className="w-full">
-          <TabsList className="mb-8" data-testid="tabs-admin">
-            <TabsTrigger value="services" data-testid="tab-services">
-              <Package className="h-4 w-4 mr-2" />
-              Layanan
-            </TabsTrigger>
-            <TabsTrigger value="orders" data-testid="tab-orders">
-              <Package className="h-4 w-4 mr-2" />
-              Pesanan
-            </TabsTrigger>
-            <TabsTrigger value="vouchers" data-testid="tab-vouchers">
-              <Ticket className="h-4 w-4 mr-2" />
-              Voucher
-            </TabsTrigger>
-            <TabsTrigger value="notifications" data-testid="tab-notifications">
-              <Bell className="h-4 w-4 mr-2" />
-              Notifikasi
-            </TabsTrigger>
-          </TabsList>
+          <div className="mb-8 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+            <TabsList className="inline-flex w-auto min-w-full md:w-full" data-testid="tabs-admin">
+              <TabsTrigger value="services" data-testid="tab-services" className="flex-shrink-0 text-xs md:text-sm">
+                <Package className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden xs:inline">Layanan</span>
+              </TabsTrigger>
+              <TabsTrigger value="orders" data-testid="tab-orders" className="flex-shrink-0 text-xs md:text-sm">
+                <Package className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden xs:inline">Pesanan</span>
+              </TabsTrigger>
+              <TabsTrigger value="vouchers" data-testid="tab-vouchers" className="flex-shrink-0 text-xs md:text-sm">
+                <Ticket className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden xs:inline">Voucher</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" data-testid="tab-notifications" className="flex-shrink-0 text-xs md:text-sm">
+                <Bell className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden xs:inline">Notifikasi</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="services">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -218,11 +220,11 @@ export default function Admin() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+              <Card className="overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Layanan</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <Package className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{services?.length || 0}</div>
@@ -250,38 +252,39 @@ export default function Admin() {
             ) : services && services.length > 0 ? (
               <div className="space-y-4">
                 {services.map((service) => (
-                  <Card key={service.id} data-testid={`card-admin-service-${service.id}`}>
-                    <CardContent className="p-6">
+                  <Card key={service.id} data-testid={`card-admin-service-${service.id}`} className="overflow-hidden">
+                    <CardContent className="p-4 md:p-6">
                       <div className="flex flex-col md:flex-row md:items-center gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start gap-3 mb-2">
-                            <h3 className="font-semibold text-lg" data-testid={`text-admin-title-${service.id}`}>
+                          <div className="flex items-start flex-wrap gap-2 mb-2">
+                            <h3 className="font-semibold text-base md:text-lg break-words" data-testid={`text-admin-title-${service.id}`}>
                               {service.title}
                             </h3>
-                            <Badge variant="secondary">{service.category}</Badge>
+                            <Badge variant="secondary" className="flex-shrink-0">{service.category}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-2 break-words">
                             {service.description}
                           </p>
-                          <div className="flex flex-wrap items-center gap-4 text-sm">
-                            <span className="font-semibold text-primary">
+                          <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm">
+                            <span className="font-semibold text-primary whitespace-nowrap">
                               Rp {service.price.toLocaleString('id-ID')}
                             </span>
-                            <span className="text-muted-foreground">{service.deliveryTime}</span>
-                            <span className="text-muted-foreground">
+                            <span className="text-muted-foreground truncate">{service.deliveryTime}</span>
+                            <span className="text-muted-foreground whitespace-nowrap">
                               {service.features.length} fitur
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenDialog(service)}
                             data-testid={`button-edit-${service.id}`}
+                            className="flex-1 md:flex-initial"
                           >
                             <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <span className="text-xs md:text-sm">Edit</span>
                           </Button>
                           <Button
                             variant="outline"
@@ -289,9 +292,10 @@ export default function Admin() {
                             onClick={() => deleteMutation.mutate(service.id)}
                             disabled={deleteMutation.isPending}
                             data-testid={`button-delete-${service.id}`}
+                            className="flex-1 md:flex-initial"
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Hapus
+                            <span className="text-xs md:text-sm">Hapus</span>
                           </Button>
                         </div>
                       </div>

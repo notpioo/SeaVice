@@ -211,31 +211,31 @@ export default function AdminNotifications() {
   const targetType = form.watch("targetType");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Push Notifications</h2>
-          <p className="text-muted-foreground">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl md:text-2xl font-bold mb-2 break-words">Push Notifications</h2>
+          <p className="text-sm md:text-base text-muted-foreground break-words">
             Kelola dan kirim notifikasi push ke pengguna
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
           {!isPermissionGranted && (
-            <Button variant="outline" onClick={handleRequestPermission}>
+            <Button variant="outline" onClick={handleRequestPermission} className="w-full sm:w-auto">
               <Bell className="h-4 w-4 mr-2" />
-              Enable Notifications
+              <span className="text-xs md:text-sm">Enable Notifications</span>
             </Button>
           )}
-          <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-notification">
+          <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-notification" className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Buat Notifikasi
+            <span className="text-xs md:text-sm">Buat Notifikasi</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-medium">Total</CardTitle>
@@ -288,9 +288,9 @@ export default function AdminNotifications() {
       </div>
 
       {/* Notifications Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>Judul</TableHead>
@@ -316,29 +316,29 @@ export default function AdminNotifications() {
               ) : notifications && notifications.length > 0 ? (
                 notifications.map((notification) => (
                   <TableRow key={notification.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">
+                    <TableCell className="min-w-[200px] max-w-[300px]">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate text-sm md:text-base">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1 break-words">
                           {notification.body}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         {notification.targetType === "all" ? (
-                          <Users className="h-3.5 w-3.5" />
+                          <Users className="h-3.5 w-3.5 flex-shrink-0" />
                         ) : (
-                          <User className="h-3.5 w-3.5" />
+                          <User className="h-3.5 w-3.5 flex-shrink-0" />
                         )}
-                        <span className="text-sm">
+                        <span className="text-xs md:text-sm">
                           {notification.targetType === "all" ? "Semua" : "User"}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(notification.status)}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">
+                    <TableCell className="whitespace-nowrap">{getStatusBadge(notification.status)}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="text-xs md:text-sm">
                         {notification.scheduledAt ? (
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Calendar className="h-3.5 w-3.5" />
@@ -351,17 +351,18 @@ export default function AdminNotifications() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="text-xs text-muted-foreground">
                         {notification.deliveredCount} / {notification.clickedCount}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(notification.id)}
                         disabled={deleteMutation.isPending}
+                        className="flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

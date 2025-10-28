@@ -47,6 +47,7 @@ export async function sendFCMNotification(payload: SendNotificationPayload): Pro
   successCount: number;
   failureCount: number;
   errors?: string[];
+  invalidTokens?: string[];
 }> {
   const { tokens, title, body, imageUrl, actionUrl, data } = payload;
 
@@ -61,6 +62,10 @@ export async function sendFCMNotification(payload: SendNotificationPayload): Pro
   let successCount = 0;
   let failureCount = 0;
   const errors: string[] = [];
+  const invalidTokens: string[] = [];
+
+  // Generate unique message ID for this notification
+  const messageId = `msg-${Date.now()}`;
 
   // Firebase Admin SDK supports sending to multiple tokens at once
   const message: admin.messaging.MulticastMessage = {
@@ -75,6 +80,7 @@ export async function sendFCMNotification(payload: SendNotificationPayload): Pro
       ...(actionUrl && { actionUrl }),
       title: title, // Tambahkan title di data untuk foreground handling
       body: body,   // Tambahkan body di data untuk foreground handling
+      messageId: messageId, // Unique ID untuk notification grouping
     },
     webpush: {
       headers: {
@@ -85,6 +91,7 @@ export async function sendFCMNotification(payload: SendNotificationPayload): Pro
         icon: '/icons/pwa-192x192.png',
         badge: '/icons/pwa-192x192.png',
         requireInteraction: true,
+        tag: messageId, // Gunakan messageId yang sama untuk semua devices
         ...(imageUrl && { image: imageUrl }),
       },
       fcmOptions: {
@@ -99,14 +106,25 @@ export async function sendFCMNotification(payload: SendNotificationPayload): Pro
     successCount = response.successCount;
     failureCount = response.failureCount;
 
-    // Collect error details
+    // Collect error details and invalid tokens
     response.responses.forEach((resp, idx) => {
       if (!resp.success && resp.error) {
-        errors.push(`Token ${idx}: ${resp.error.message}`);
+        const errorMessage = resp.error.message;
+        errors.push(`Token ${idx}: ${errorMessage}`);
+        
+        // Check if error is due to invalid token
+        if (errorMessage.includes('not found') || 
+            errorMessage.includes('invalid') ||
+            errorMessage.includes('unregistered')) {
+          invalidTokens.push(tokens[idx]);
+        }
       }
     });
 
     console.log(`✅ Sent to ${successCount} devices, failed: ${failureCount}`);
+    if (invalidTokens.length > 0) {
+      console.log(`🗑️ Found ${invalidTokens.length} invalid tokens to cleanup`);
+    }
   } catch (error: any) {
     console.error('Error sending FCM notification:', error);
     failureCount = tokens.length;
@@ -117,5 +135,6 @@ export async function sendFCMNotification(payload: SendNotificationPayload): Pro
     successCount,
     failureCount,
     ...(errors.length > 0 && { errors }),
+    ...(invalidTokens.length > 0 && { invalidTokens }),
   };
 }

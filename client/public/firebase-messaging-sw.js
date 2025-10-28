@@ -72,8 +72,12 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || payload.data?.title || 'SeaVice';
   const notificationBody = payload.notification?.body || payload.data?.body || 'Ada pesan baru untuk Anda';
   
+  // Use messageId from payload for consistent tag across devices
+  const messageId = payload.data?.messageId || `seavice-${Date.now()}`;
+  
   console.log('📩 [SW Background] Title:', notificationTitle);
   console.log('📩 [SW Background] Body:', notificationBody);
+  console.log('📩 [SW Background] MessageID:', messageId);
 
   const notificationOptions = {
     body: notificationBody,
@@ -83,17 +87,16 @@ messaging.onBackgroundMessage((payload) => {
     data: {
       ...payload.data,
       url: payload.data?.actionUrl || '/',
-      timestamp: Date.now()
+      messageId: messageId
     },
     vibrate: [300, 100, 200, 100, 300],
-    tag: `seavice-${Date.now()}`,
+    tag: messageId, // Gunakan messageId yang sama dari server untuk grouping
     requireInteraction: true,
-    renotify: true,
-    silent: false,
-    timestamp: Date.now()
+    renotify: false, // Set false agar tidak duplicate notification
+    silent: false
   };
 
-  console.log('📩 [SW Background] Showing notification');
+  console.log('📩 [SW Background] Showing notification with tag:', messageId);
 
   return self.registration.showNotification(notificationTitle, notificationOptions)
     .then(() => {
@@ -134,53 +137,4 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('install', (event) => {
   console.log('📦 [SW] Service Worker installed');
   self.skipWaiting();
-});
-
-// TAMBAHAN: Push event listener untuk PWA native app
-self.addEventListener('push', (event) => {
-  console.log('📩 [SW Push] Push event received!');
-  console.log('📩 [SW Push] Event:', event);
-  console.log('📩 [SW Push] Has data:', !!event.data);
-  
-  if (event.data) {
-    try {
-      const data = event.data.json();
-      console.log('📩 [SW Push] Parsed data:', JSON.stringify(data));
-      
-      const title = data.notification?.title || data.data?.title || 'SeaVice';
-      const body = data.notification?.body || data.data?.body || 'Ada pesan baru';
-      
-      console.log('📩 [SW Push] Will show - Title:', title, 'Body:', body);
-      
-      const options = {
-        body: body,
-        icon: '/icons/pwa-192x192.png',
-        badge: '/icons/pwa-192x192.png',
-        image: data.notification?.image || data.data?.imageUrl,
-        data: {
-          ...(data.data || {}),
-          timestamp: Date.now()
-        },
-        vibrate: [300, 100, 200, 100, 300],
-        tag: `seavice-push-${Date.now()}`,
-        requireInteraction: true,
-        renotify: true,
-        silent: false
-      };
-      
-      event.waitUntil(
-        self.registration.showNotification(title, options)
-          .then(() => {
-            console.log('✅ [SW Push] Notification shown successfully');
-          })
-          .catch((error) => {
-            console.error('❌ [SW Push] Error showing notification:', error);
-          })
-      );
-    } catch (error) {
-      console.error('❌ [SW Push] Error parsing data:', error);
-    }
-  } else {
-    console.warn('⚠️ [SW Push] No data in push event');
-  }
 });
