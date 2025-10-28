@@ -77,6 +77,8 @@ export interface Order {
   status: OrderStatus;
   paymentProofUrl?: string;
   paymentStatus?: "waiting_payment" | "waiting_confirmation" | "confirmed" | "rejected";
+  rejectionReason?: string;
+  uploadAttempts?: number;
   notes?: string;
   orderDate: Date;
   deliveryDate?: Date;
@@ -95,7 +97,9 @@ export const insertOrderSchema = z.object({
   finalPrice: z.number().min(0, "Harga final harus positif"),
   status: orderStatusSchema.default("pending"),
   paymentProofUrl: z.string().optional(),
-  paymentStatus: z.enum(["waiting_payment", "waiting_confirmation", "confirmed", "rejected"]).optional().default("waiting_payment"),
+  paymentStatus: z.enum(["waiting_payment", "waiting_confirmation", "confirmed", "rejected"]).default("waiting_payment"),
+  rejectionReason: z.string().optional(),
+  uploadAttempts: z.number().min(0).default(0),
   notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
   deliveryDate: z.string().optional(),
 });
@@ -106,6 +110,8 @@ export const updateOrderSchema = z.object({
   status: orderStatusSchema.optional(),
   paymentProofUrl: z.string().optional(),
   paymentStatus: z.enum(["waiting_payment", "waiting_confirmation", "confirmed", "rejected"]).optional(),
+  rejectionReason: z.string().optional(),
+  uploadAttempts: z.number().min(0).optional(),
   notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
   deliveryDate: z.string().optional(),
 });

@@ -191,3 +191,21 @@ Untuk membuat user dengan role admin:
   - Automatic voucher removal ketika quantity berubah untuk mencegah incorrect discount
   - Order pricing transparency dengan originalPrice, discountAmount, dan finalPrice
   - Voucher display di order confirmation page
+- **Payment Proof Bug Fixes** (October 28, 2025):
+  - Fixed payment proof images not appearing in admin panel (added updateOrderPaymentProof function)
+  - Fixed misleading "Pesanan Berhasil Dibuat" message - now shows status-specific messages:
+    - "Menunggu Pembayaran" untuk waiting_payment status
+    - "Menunggu Konfirmasi Pembayaran" untuk waiting_confirmation status
+    - "Pembayaran Dikonfirmasi" untuk confirmed status
+    - "Pembayaran Ditolak" untuk rejected status
+  - Payment proof URL now properly saved to Firestore with paymentStatus update
+  - Query cache invalidation after upload ensures real-time updates
+- **Push Notifications for Payment Updates** (October 28, 2025):
+  - Automatic push notifications when admin confirms or rejects payment
+  - Uses existing FCM infrastructure with sendPushNotification function
+  - Notifications include actionable deep links to order detail page (`/pesanan/:id`)
+  - Admin sees confirmation in toast when notification is sent
+  - Error handling ensures admin workflow continues even if notification fails
+  - Users receive:
+    - "✅ Pembayaran Dikonfirmasi" when payment is approved
+    - "❌ Pembayaran Ditolak" when payment is rejected

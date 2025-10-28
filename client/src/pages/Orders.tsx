@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { getUserOrders } from "@/lib/orders";
+import { subscribeToUserOrders } from "@/lib/orders";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,18 +30,36 @@ export default function Orders() {
   const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: allOrders, isLoading } = useQuery<Order[]>({
-    queryKey: ["orders", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      console.log("Fetching orders for userId:", user.id); // Debug log
-      const orders = await getUserOrders(user.id);
-      console.log("Orders fetched:", orders); // Debug log
-      return orders;
-    },
-    enabled: !!user,
-  });
+  useEffect(() => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
+    console.log("🔄 Setting up real-time orders subscription");
+    setIsLoading(true);
+
+    const unsubscribe = subscribeToUserOrders(
+      user.id,
+      (orders) => {
+        console.log("✅ Orders updated in real-time:", orders.length);
+        setAllOrders(orders);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("❌ Error in real-time subscription:", error);
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      console.log("🔌 Cleaning up orders subscription");
+      unsubscribe();
+    };
+  }, [user?.id]);
 
   const getStatusIcon = (status: OrderStatus, paymentStatus?: string) => {
     if (status === "pending" && paymentStatus === "waiting_payment") {
@@ -68,9 +85,9 @@ export default function Orders() {
     // If order is pending and waiting for payment
     if (order.status === "pending" && order.paymentStatus === "waiting_payment") {
       return (
-        <Badge variant="secondary" className="gap-1.5 whitespace-nowrap flex-shrink-0 bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
-          <Clock className="h-4 w-4" />
-          Menunggu Pembayaran
+        <Badge variant="secondary" className="gap-1.5 inline-flex bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
+          <Clock className="h-4 w-4 flex-shrink-0" />
+          <span className="text-xs">Menunggu Pembayaran</span>
         </Badge>
       );
     }
@@ -78,9 +95,9 @@ export default function Orders() {
     // If order is pending and waiting for confirmation
     if (order.status === "pending" && order.paymentStatus === "waiting_confirmation") {
       return (
-        <Badge variant="secondary" className="gap-1.5 whitespace-nowrap flex-shrink-0 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-          <Clock className="h-4 w-4" />
-          Menunggu Konfirmasi Admin
+        <Badge variant="secondary" className="gap-1.5 inline-flex bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+          <Clock className="h-4 w-4 flex-shrink-0" />
+          <span className="text-xs">Menunggu Konfirmasi Admin</span>
         </Badge>
       );
     }
@@ -88,9 +105,9 @@ export default function Orders() {
     // If payment is confirmed but order is still pending
     if (order.status === "pending" && order.paymentStatus === "confirmed") {
       return (
-        <Badge variant="secondary" className="gap-1.5 whitespace-nowrap flex-shrink-0">
-          <Clock className="h-4 w-4" />
-          Menunggu Diproses
+        <Badge variant="secondary" className="gap-1.5 inline-flex">
+          <Clock className="h-4 w-4 flex-shrink-0" />
+          <span className="text-xs">Menunggu Diproses</span>
         </Badge>
       );
     }
@@ -98,9 +115,9 @@ export default function Orders() {
     // If payment is rejected
     if (order.paymentStatus === "rejected") {
       return (
-        <Badge variant="destructive" className="gap-1.5 whitespace-nowrap flex-shrink-0">
-          <XCircle className="h-4 w-4" />
-          Pembayaran Ditolak
+        <Badge variant="destructive" className="gap-1.5 inline-flex">
+          <XCircle className="h-4 w-4 flex-shrink-0" />
+          <span className="text-xs">Pembayaran Ditolak</span>
         </Badge>
       );
     }
@@ -120,9 +137,9 @@ export default function Orders() {
     };
 
     return (
-      <Badge variant={variants[order.status]} className="gap-1.5 whitespace-nowrap flex-shrink-0">
+      <Badge variant={variants[order.status]} className="gap-1.5 inline-flex">
         {getStatusIcon(order.status, order.paymentStatus)}
-        {labels[order.status]}
+        <span className="text-xs">{labels[order.status]}</span>
       </Badge>
     );
   };
@@ -292,61 +309,81 @@ export default function Orders() {
             {filteredAndSortedOrders.map((order) => (
               <Card
                 key={order.id}
-                className="hover-elevate"
+                className="hover-elevate overflow-hidden"
                 data-testid={`order-card-${order.id}`}
               >
-                <CardHeader>
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <div>
-                          <h3 className="font-semibold text-lg" data-testid={`text-service-name-${order.id}`}>
-                            {order.serviceName}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            ID: <span className="font-mono" data-testid={`text-order-id-${order.id}`}>{order.id}</span>
-                          </p>
-                        </div>
+                <CardHeader className="p-4 overflow-hidden">
+                  <div className="space-y-3">
+                    {/* Title and Status Badge */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-lg flex-1 min-w-0" data-testid={`text-service-name-${order.id}`}>
+                          {order.serviceName}
+                        </h3>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <p className="text-xs text-muted-foreground break-all">
+                          ID: <span className="font-mono" data-testid={`text-order-id-${order.id}`}>{order.id.substring(0, 16)}...</span>
+                        </p>
                         <div data-testid={`badge-status-${order.id}`}>
                           {getStatusBadge(order)}
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4" />
-                          <span data-testid={`text-order-date-${order.id}`}>
-                            {new Date(order.orderDate).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </div>
-                        <div className="font-semibold text-primary text-lg" data-testid={`text-price-${order.id}`}>
-                          Rp {order.finalPrice.toLocaleString("id-ID")}
-                        </div>
-                      </div>
-                      {order.paymentStatus === "waiting_payment" && (
-                        <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                          ⚠️ Segera lakukan pembayaran untuk melanjutkan pesanan
-                        </div>
-                      )}
-                      {order.paymentStatus === "waiting_confirmation" && (
-                        <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                          ⏳ Bukti pembayaran sedang diverifikasi oleh admin
-                        </div>
-                      )}
                     </div>
-                    <div className="flex gap-2">
+
+                    {/* Date and Price */}
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Calendar className="h-4 w-4 flex-shrink-0" />
+                        <span data-testid={`text-order-date-${order.id}`} className="text-xs">
+                          {new Date(order.orderDate).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <div className="font-semibold text-primary text-lg" data-testid={`text-price-${order.id}`}>
+                        Rp {order.finalPrice.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+
+                    {/* Warning Messages */}
+                    {order.paymentStatus === "waiting_payment" && (
+                      <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-md border border-amber-200 dark:border-amber-800">
+                        ⚠️ Segera lakukan pembayaran untuk melanjutkan pesanan
+                      </div>
+                    )}
+                    {order.paymentStatus === "waiting_confirmation" && (
+                      <div className="text-xs text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-md border border-blue-200 dark:border-blue-800">
+                        ⏳ Bukti pembayaran sedang diverifikasi oleh admin
+                      </div>
+                    )}
+
+                    {/* Rejection Reason */}
+                    {order.paymentStatus === "rejected" && order.rejectionReason && (
+                      <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 px-3 py-2 rounded-md border border-red-200 dark:border-red-800">
+                        <strong>Alasan Penolakan:</strong> {order.rejectionReason}
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-2">
                       {order.paymentStatus === "waiting_payment" ? (
-                        <Link href={`/payment/${order.id}`}>
-                          <Button size="sm" data-testid={`button-payment-${order.id}`}>
+                        <Link href={`/payment/${order.id}`} className="flex-1">
+                          <Button size="sm" className="w-full" data-testid={`button-payment-${order.id}`}>
                             Bayar Sekarang
                           </Button>
                         </Link>
+                      ) : order.paymentStatus === "rejected" ? (
+                        <Link href={`/payment/${order.id}`} className="flex-1">
+                          <Button size="sm" variant="destructive" className="w-full" data-testid={`button-reupload-${order.id}`}>
+                            Upload Bukti Baru
+                          </Button>
+                        </Link>
                       ) : (
-                        <Link href={`/pesanan/${order.id}`}>
-                          <Button variant="outline" size="sm" data-testid={`button-view-detail-${order.id}`}>
+                        <Link href={`/pesanan/${order.id}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full" data-testid={`button-view-detail-${order.id}`}>
                             Lihat Detail
                           </Button>
                         </Link>

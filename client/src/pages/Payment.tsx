@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getOrderById } from "@/lib/orders";
+import { getOrderById, updateOrderPaymentProof } from "@/lib/orders";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,14 +49,22 @@ export default function Payment() {
         throw new Error("Gagal mengupload bukti pembayaran");
       }
 
-      return response.json();
+      const data = await response.json();
+
+      await updateOrderPaymentProof(orderId!, data.imageUrl);
+
+      return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+
+      const newAttempts = (order?.uploadAttempts || 0) + 1;
       toast({
         title: "Bukti Pembayaran Terkirim",
-        description: "Bukti pembayaran Anda sedang diverifikasi oleh admin",
+        description: `Bukti pembayaran sedang diverifikasi (Upload ke-${newAttempts}/5)`,
       });
-      setLocation(`/pesanan/${orderId}`);
+      setLocation("/pesanan");
     },
     onError: (error: any) => {
       toast({
@@ -107,6 +115,18 @@ export default function Payment() {
       });
       return;
     }
+
+    const currentAttempts = order?.uploadAttempts || 0;
+    if (currentAttempts >= 5) {
+      toast({
+        title: "Batas Upload Tercapai",
+        description: "Anda telah mencapai batas maksimal upload bukti pembayaran. Pesanan dibatalkan.",
+        variant: "destructive",
+      });
+      // Optionally, you could call a mutation here to cancel the order
+      return;
+    }
+
     uploadMutation.mutate(selectedFile);
   };
 
@@ -139,17 +159,38 @@ export default function Payment() {
           <CheckCircle2 className="h-24 w-24 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-4">Bukti Pembayaran Sudah Dikirim</h2>
           <p className="text-muted-foreground mb-6">
-            {order.paymentStatus === "confirmed" 
+            {order.paymentStatus === "confirmed"
               ? "Pembayaran Anda sudah dikonfirmasi"
               : "Menunggu konfirmasi dari admin"}
           </p>
-          <Link href={`/pesanan/${orderId}`}>
-            <Button>Lihat Detail Pesanan</Button>
+          <Link href="/pesanan">
+            <Button>Kembali ke Riwayat Pesanan</Button>
           </Link>
         </div>
       </div>
     );
   }
+
+  // Check if upload attempts have reached the maximum limit
+  const maxUploadsReached = (order?.uploadAttempts || 0) >= 5;
+
+  if (maxUploadsReached) {
+    return (
+      <div className="min-h-screen py-16 md:py-24 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-24 w-24 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-4">Pesanan Dibatalkan</h2>
+          <p className="text-muted-foreground mb-6">
+            Anda telah mencapai batas maksimal upload bukti pembayaran (5 kali). Pesanan ini dibatalkan.
+          </p>
+          <Link href="/pesanan">
+            <Button>Kembali ke Riwayat Pesanan</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen py-8 md:py-12">
@@ -164,16 +205,60 @@ export default function Payment() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-primary/10 mb-4">
-            <Clock className="h-10 w-10 text-primary" />
+          <div className={`inline-flex items-center justify-center h-20 w-20 rounded-full mb-4 ${
+            order.paymentStatus === "rejected" ? "bg-red-100 dark:bg-red-900/20" : "bg-primary/10"
+          }`}>
+            {order.paymentStatus === "rejected" ? (
+              <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
+            ) : (
+              <Clock className="h-10 w-10 text-primary" />
+            )}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            Konfirmasi Pembayaran
+            {order.paymentStatus === "rejected" ? "Upload Ulang Bukti Pembayaran" : "Konfirmasi Pembayaran"}
           </h1>
           <p className="text-muted-foreground">
-            Scan QRIS dan upload bukti pembayaran Anda
+            {order.paymentStatus === "rejected"
+              ? "Pembayaran sebelumnya ditolak. Pastikan bukti pembayaran yang baru sudah benar"
+              : "Scan QRIS dan upload bukti pembayaran Anda"}
           </p>
         </div>
+
+        {/* Rejection Warning */}
+        {order.paymentStatus === "rejected" && (
+          <Card className="mb-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20">
+            <CardContent className="pt-6">
+              <div className="flex gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-red-900 dark:text-red-100 mb-3">
+                    ❌ Pembayaran Ditolak oleh Admin
+                  </h3>
+
+                  {order.rejectionReason && (
+                    <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-md border border-red-300 dark:border-red-700 mb-3">
+                      <p className="text-sm font-semibold text-red-900 dark:text-red-100 mb-1">
+                        Alasan Penolakan:
+                      </p>
+                      <p className="text-sm text-red-800 dark:text-red-200">
+                        {order.rejectionReason}
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
+                    Silakan upload bukti pembayaran yang baru dengan memastikan:
+                  </p>
+                  <ul className="text-sm text-red-700 dark:text-red-300 list-disc list-inside space-y-1">
+                    <li>Nominal transfer sesuai dengan total pembayaran</li>
+                    <li>Foto bukti transfer terlihat jelas</li>
+                    <li>Tanggal dan waktu transfer tercantum</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Order Info */}
         <Card className="mb-6">
@@ -241,7 +326,7 @@ export default function Payment() {
                   accept="image/*"
                   onChange={handleFileChange}
                   className="mt-2"
-                  disabled={uploadMutation.isPending}
+                  disabled={uploadMutation.isPending || maxUploadsReached}
                 />
               </div>
 
@@ -270,7 +355,7 @@ export default function Payment() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={!selectedFile || uploadMutation.isPending}
+                disabled={!selectedFile || uploadMutation.isPending || maxUploadsReached}
               >
                 {uploadMutation.isPending ? (
                   <>
@@ -284,6 +369,9 @@ export default function Payment() {
                   </>
                 )}
               </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                Sisa percobaan upload: {5 - (order?.uploadAttempts || 0)} kali
+              </p>
             </form>
           </CardContent>
         </Card>

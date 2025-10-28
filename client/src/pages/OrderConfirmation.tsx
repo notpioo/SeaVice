@@ -79,19 +79,62 @@ export default function OrderConfirmation() {
     );
   };
 
+  const getHeaderInfo = () => {
+    const paymentStatus = order?.paymentStatus;
+    
+    if (paymentStatus === "waiting_payment") {
+      return {
+        icon: <Clock className="h-10 w-10 text-amber-500" />,
+        title: "Menunggu Pembayaran",
+        description: "Silakan lakukan pembayaran untuk melanjutkan pesanan Anda.",
+        bgColor: "bg-amber-500/10"
+      };
+    } else if (paymentStatus === "waiting_confirmation") {
+      return {
+        icon: <Clock className="h-10 w-10 text-blue-500" />,
+        title: "Menunggu Konfirmasi Pembayaran",
+        description: "Bukti pembayaran Anda sedang diverifikasi oleh admin.",
+        bgColor: "bg-blue-500/10"
+      };
+    } else if (paymentStatus === "confirmed") {
+      return {
+        icon: <CheckCircle2 className="h-10 w-10 text-green-500" />,
+        title: "Pembayaran Dikonfirmasi",
+        description: "Pembayaran Anda telah dikonfirmasi. Pesanan sedang diproses.",
+        bgColor: "bg-green-500/10"
+      };
+    } else if (paymentStatus === "rejected") {
+      return {
+        icon: <Package className="h-10 w-10 text-red-500" />,
+        title: "Pembayaran Ditolak",
+        description: "Bukti pembayaran ditolak. Silakan hubungi admin untuk informasi lebih lanjut.",
+        bgColor: "bg-red-500/10"
+      };
+    }
+    
+    return {
+      icon: <CheckCircle2 className="h-10 w-10 text-primary" />,
+      title: "Pesanan Berhasil Dibuat!",
+      description: "Terima kasih atas pesanan Anda. Kami akan segera memprosesnya.",
+      bgColor: "bg-primary/10"
+    };
+  };
+
+  const headerInfo = getHeaderInfo();
+
   return (
     <div className="min-h-screen py-8 md:py-12 overflow-x-hidden">
       <div className="max-w-2xl mx-auto px-4 md:px-8 overflow-x-hidden w-full">
-        {/* Success Icon */}
+        {/* Header Icon */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-primary/10 mb-4">
-            <CheckCircle2 className="h-10 w-10 text-primary" />
+          <div className={`inline-flex items-center justify-center h-20 w-20 rounded-full ${headerInfo.bgColor} mb-4`}>
+            {headerInfo.icon}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            Pesanan Berhasil Dibuat!
+            {headerInfo.title}
           </h1>
           <p className="text-muted-foreground">
-            Terima kasih atas pesanan Anda. Kami akan segera memprosesnya.
+            {headerInfo.description}
           </p>
         </div>
 
