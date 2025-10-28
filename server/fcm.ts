@@ -73,16 +73,19 @@ export async function sendFCMNotification(payload: SendNotificationPayload): Pro
     data: {
       ...(data || {}),
       ...(actionUrl && { actionUrl }),
+      title: title, // Tambahkan title di data untuk foreground handling
+      body: body,   // Tambahkan body di data untuk foreground handling
     },
     webpush: {
+      headers: {
+        TTL: '86400', // 24 jam sesuai dokumentasi
+        Urgency: 'high',
+      },
       notification: {
         icon: '/icons/pwa-192x192.png',
         badge: '/icons/pwa-192x192.png',
         requireInteraction: true,
-        ...(actionUrl && { 
-          data: { url: actionUrl },
-          actions: [{ action: 'open', title: 'Buka' }]
-        }),
+        ...(imageUrl && { image: imageUrl }),
       },
       fcmOptions: {
         link: actionUrl || '/',

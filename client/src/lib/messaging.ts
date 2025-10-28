@@ -23,30 +23,74 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 export async function requestNotificationPermission(): Promise<string | null> {
   try {
     console.log('🔔 Requesting notification permission...');
-    const permission = await Notification.requestPermission();
-    console.log('🔔 Permission result:', permission);
+    console.log('🔔 Current permission:', Notification.permission);
+    
+    // Check if notifications are supported
+    if (!('Notification' in window)) {
+      console.error('❌ This browser does not support notifications');
+      return null;
+    }
+
+    // Check if service workers are supported
+    if (!('serviceWorker' in navigator)) {
+      console.error('❌ Service workers are not supported');
+      return null;
+    }
+
+    // Request permission jika belum granted
+    let permission = Notification.permission;
+    if (permission !== 'granted') {
+      permission = await Notification.requestPermission();
+      console.log('🔔 Permission result:', permission);
+    } else {
+      console.log('🔔 Permission already granted');
+    }
 
     if (permission === 'granted') {
       // Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready;
-      console.log('✅ Service Worker ready:', registration);
+      console.log('✅ Service Worker ready');
 
-      console.log('🔑 VAPID Key:', VAPID_KEY ? 'Present' : 'Missing');
+      if (!VAPID_KEY) {
+        console.error('❌ VAPID Key is missing');
+        return null;
+      }
+
+      console.log('🔑 Getting FCM token...');
       
       const token = await getToken(messaging, {
         vapidKey: VAPID_KEY,
         serviceWorkerRegistration: registration
       });
 
-      console.log('✅ FCM Token obtained:', token);
+      if (!token) {
+        console.error('❌ No token received from Firebase');
+        return null;
+      }
+
+      console.log('✅ FCM Token obtained:', token.substring(0, 30) + '...');
+      
+      // Test notification
+      console.log('🧪 Testing notification...');
+      new Notification('SeaVice', {
+        body: 'Notifikasi berhasil diaktifkan!',
+        icon: '/icons/pwa-192x192.png',
+        tag: 'test-notification'
+      });
+      
       return token;
     } else {
-      console.warn('⚠️ Notification permission denied');
+      console.warn('⚠️ Notification permission denied or dismissed');
+      alert('Mohon aktifkan notifikasi untuk menerima update pesanan Anda!');
     }
 
     return null;
   } catch (error) {
     console.error('❌ Error getting notification permission:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return null;
   }
 }
@@ -111,10 +155,17 @@ export async function getUserFCMTokens(userId: string): Promise<string[]> {
 
 // Setup foreground message listener
 export function setupMessageListener(callback: (payload: any) => void) {
-  if (!messaging) return;
+  if (!messaging) {
+    console.warn('⚠️ Messaging not initialized, cannot setup listener');
+    return;
+  }
+
+  console.log('✅ Setting up foreground message listener');
 
   onMessage(messaging, (payload) => {
-    console.log("📩 Message received in foreground:", payload);
+    console.log("📩 [Foreground] Message received:", payload);
+    console.log("📩 [Foreground] Title:", payload.notification?.title || payload.data?.title);
+    console.log("📩 [Foreground] Body:", payload.notification?.body || payload.data?.body);
     callback(payload);
   });
 }

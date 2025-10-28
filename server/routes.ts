@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Router, type Request, type Response } from "express";
-import { db } from "../db";
 import { sendFCMNotification } from "./fcm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -18,6 +17,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.post("/api/send-notification", async (req: Request, res: Response) => {
     try {
       const { tokens, title, body, imageUrl, actionUrl, data } = req.body;
+
+      console.log('📤 [API] Received notification request');
+      console.log('📤 [API] Tokens count:', tokens?.length);
+      console.log('📤 [API] Title:', title);
+      console.log('📤 [API] Body:', body);
 
       if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
         return res.status(400).json({ error: "Tokens array is required" });
@@ -36,12 +40,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data,
       });
 
+      console.log('📤 [API] Notification sent:', result);
       res.json(result);
     } catch (error: any) {
-      console.error("Error sending notification:", error);
+      console.error("❌ [API] Error sending notification:", error);
       res.status(500).json({ error: error.message });
     }
   });
+
+  app.use(router);
 
   const httpServer = createServer(app);
 
