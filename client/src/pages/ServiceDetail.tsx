@@ -95,14 +95,29 @@ export default function ServiceDetail() {
   const orderMutation = useMutation({
     mutationFn: createOrder,
     onSuccess: (order) => {
+      console.log("✅ Order created successfully:", order);
       setIsOrderDialogOpen(false);
       form.reset();
-      setLocation(`/pesanan/${order.id}`);
+      setQuantity(1);
+      setAppliedVoucher(null);
+      setDiscountAmount(0);
+      setVoucherCode("");
+      
+      toast({
+        title: "Pesanan Berhasil Dibuat!",
+        description: "Silakan lakukan pembayaran untuk melanjutkan pesanan Anda.",
+      });
+      
+      // Redirect to payment page
+      setTimeout(() => {
+        setLocation(`/payment/${order.id}`);
+      }, 500);
     },
     onError: (error: any) => {
+      console.error("❌ Order creation error:", error);
       toast({
         title: "Gagal Membuat Pesanan",
-        description: error.message || "Terjadi kesalahan saat membuat pesanan",
+        description: error.message || "Terjadi kesalahan saat membuat pesanan. Silakan coba lagi.",
         variant: "destructive",
       });
     },
@@ -160,12 +175,29 @@ export default function ServiceDetail() {
   };
 
   const onSubmit = async (values: OrderFormData) => {
-    if (!user || !service) return;
+    if (!user || !service) {
+      console.error("❌ Missing user or service");
+      toast({
+        title: "Error",
+        description: "Data user atau layanan tidak tersedia",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const originalPrice = service.price * quantity;
     const finalPrice = originalPrice - discountAmount;
 
-    console.log("Creating order with userId:", user.id);
+    console.log("📝 Creating order with data:", {
+      userId: user.id,
+      serviceId: service.id,
+      serviceName: service.title,
+      originalPrice,
+      finalPrice,
+      quantity,
+      discountAmount,
+      voucherCode: appliedVoucher?.code,
+    });
     
     try {
       const orderData: InsertOrder = {
@@ -174,21 +206,25 @@ export default function ServiceDetail() {
         serviceName: service.title,
         originalPrice: originalPrice,
         servicePrice: finalPrice,
-        voucherCode: appliedVoucher?.code,
-        discountAmount: discountAmount > 0 ? discountAmount : undefined,
         finalPrice: finalPrice,
         status: "pending",
-        notes: values.notes,
+        paymentStatus: "waiting_payment",
+        ...(values.notes && { notes: values.notes }),
+        ...(appliedVoucher?.code && { voucherCode: appliedVoucher.code }),
+        ...(discountAmount > 0 && { discountAmount }),
       };
 
-      const newOrder = await orderMutation.mutateAsync(orderData);
-      console.log("Order created:", newOrder);
+      console.log("📤 Submitting order data:", orderData);
+      await orderMutation.mutateAsync(orderData);
 
+      // Increment voucher usage after successful order creation
       if (appliedVoucher) {
+        console.log("🎟️ Incrementing voucher usage:", appliedVoucher.code);
         await incrementVoucherUsage(appliedVoucher.id);
       }
     } catch (error) {
-      console.error("Order submission error:", error);
+      console.error("❌ Order submission error:", error);
+      // Error toast is handled by mutation onError
     }
   };
 
@@ -304,12 +340,12 @@ export default function ServiceDetail() {
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5">
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-3 w-3 fill-primary text-primary" />
+                  <Star key={i} className={`h-3 w-3 ${i < Math.floor(service.rating) ? 'fill-primary text-primary' : 'fill-muted text-muted'}`} />
                 ))}
-                <span className="ml-1 font-medium">5.0</span>
+                <span className="ml-1 font-medium">{service.rating.toFixed(1)} / 5.0</span>
               </div>
               <span>•</span>
-              <span>100+ Pesanan</span>
+              <span>{service.orderCount}{service.orderCount > 0 ? '+' : ''} Pesanan</span>
             </div>
           </div>
         </div>
@@ -544,12 +580,12 @@ export default function ServiceDetail() {
                   <div className="flex items-center gap-2 text-sm">
                     <div className="flex items-center gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <Star key={i} className={`h-4 w-4 ${i < Math.floor(service.rating) ? 'fill-yellow-400 text-yellow-400' : 'fill-muted text-muted'}`} />
                       ))}
                     </div>
-                    <span className="font-semibold">5.0 / 5.0</span>
+                    <span className="font-semibold">{service.rating.toFixed(1)} / 5.0</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">100+ Pesanan</p>
+                  <p className="text-xs text-muted-foreground mt-1">{service.orderCount}{service.orderCount > 0 ? '+' : ''} Pesanan</p>
                 </div>
               </CardContent>
             </Card>

@@ -80,8 +80,8 @@ export default function OrderConfirmation() {
   };
 
   return (
-    <div className="min-h-screen py-8 md:py-12">
-      <div className="max-w-2xl mx-auto px-4 md:px-8">
+    <div className="min-h-screen py-8 md:py-12 overflow-x-hidden">
+      <div className="max-w-2xl mx-auto px-4 md:px-8 overflow-x-hidden w-full">
         {/* Success Icon */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-primary/10 mb-4">
@@ -98,14 +98,16 @@ export default function OrderConfirmation() {
         {/* Order Details */}
         <Card className="mb-6">
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-semibold mb-1">Detail Pesanan</h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground break-all">
                   ID Pesanan: <span className="font-mono" data-testid="text-order-id">{order.id}</span>
                 </p>
               </div>
-              {getStatusBadge(order.status)}
+              <div className="shrink-0">
+                {getStatusBadge(order.status)}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -221,18 +223,29 @@ export default function OrderConfirmation() {
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Link href="/" className="flex-1">
-            <Button className="w-full" data-testid="button-home">
-              <ArrowRight className="mr-2 h-4 w-4" />
-              Kembali ke Home
-            </Button>
-          </Link>
-          <Link href="/layanan" className="flex-1">
-            <Button variant="outline" className="w-full" data-testid="button-browse-services">
-              Lihat Layanan Lainnya
-            </Button>
-          </Link>
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
+          {order.paymentStatus === "waiting_payment" && (
+            <Link href={`/payment/${order.id}`} className="flex-1 w-full">
+              <Button className="w-full" data-testid="button-payment">
+                Lanjut ke Pembayaran
+              </Button>
+            </Link>
+          )}
+          {order.paymentStatus !== "waiting_payment" && (
+            <>
+              <Link href="/" className="flex-1 w-full">
+                <Button className="w-full" data-testid="button-home">
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  Kembali ke Home
+                </Button>
+              </Link>
+              <Link href="/layanan" className="flex-1 w-full">
+                <Button variant="outline" className="w-full" data-testid="button-browse-services">
+                  Lihat Layanan Lainnya
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>

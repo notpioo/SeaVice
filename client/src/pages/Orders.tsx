@@ -44,7 +44,14 @@ export default function Orders() {
     enabled: !!user,
   });
 
-  const getStatusIcon = (status: OrderStatus) => {
+  const getStatusIcon = (status: OrderStatus, paymentStatus?: string) => {
+    if (status === "pending" && paymentStatus === "waiting_payment") {
+      return <Clock className="h-4 w-4" />;
+    }
+    if (status === "pending" && paymentStatus === "waiting_confirmation") {
+      return <Clock className="h-4 w-4" />;
+    }
+    
     switch (status) {
       case "pending":
         return <Clock className="h-4 w-4" />;
@@ -57,7 +64,47 @@ export default function Orders() {
     }
   };
 
-  const getStatusBadge = (status: OrderStatus) => {
+  const getStatusBadge = (order: Order) => {
+    // If order is pending and waiting for payment
+    if (order.status === "pending" && order.paymentStatus === "waiting_payment") {
+      return (
+        <Badge variant="secondary" className="gap-1.5 whitespace-nowrap flex-shrink-0 bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
+          <Clock className="h-4 w-4" />
+          Menunggu Pembayaran
+        </Badge>
+      );
+    }
+    
+    // If order is pending and waiting for confirmation
+    if (order.status === "pending" && order.paymentStatus === "waiting_confirmation") {
+      return (
+        <Badge variant="secondary" className="gap-1.5 whitespace-nowrap flex-shrink-0 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+          <Clock className="h-4 w-4" />
+          Menunggu Konfirmasi Admin
+        </Badge>
+      );
+    }
+
+    // If payment is confirmed but order is still pending
+    if (order.status === "pending" && order.paymentStatus === "confirmed") {
+      return (
+        <Badge variant="secondary" className="gap-1.5 whitespace-nowrap flex-shrink-0">
+          <Clock className="h-4 w-4" />
+          Menunggu Diproses
+        </Badge>
+      );
+    }
+
+    // If payment is rejected
+    if (order.paymentStatus === "rejected") {
+      return (
+        <Badge variant="destructive" className="gap-1.5 whitespace-nowrap flex-shrink-0">
+          <XCircle className="h-4 w-4" />
+          Pembayaran Ditolak
+        </Badge>
+      );
+    }
+    
     const variants: Record<OrderStatus, "default" | "secondary" | "destructive"> = {
       pending: "secondary",
       processing: "default",
@@ -73,9 +120,9 @@ export default function Orders() {
     };
 
     return (
-      <Badge variant={variants[status]} className="gap-1.5">
-        {getStatusIcon(status)}
-        {labels[status]}
+      <Badge variant={variants[order.status]} className="gap-1.5 whitespace-nowrap flex-shrink-0">
+        {getStatusIcon(order.status, order.paymentStatus)}
+        {labels[order.status]}
       </Badge>
     );
   };
@@ -261,7 +308,7 @@ export default function Orders() {
                           </p>
                         </div>
                         <div data-testid={`badge-status-${order.id}`}>
-                          {getStatusBadge(order.status)}
+                          {getStatusBadge(order)}
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -276,16 +323,34 @@ export default function Orders() {
                           </span>
                         </div>
                         <div className="font-semibold text-primary text-lg" data-testid={`text-price-${order.id}`}>
-                          Rp {order.servicePrice.toLocaleString("id-ID")}
+                          Rp {order.finalPrice.toLocaleString("id-ID")}
                         </div>
                       </div>
+                      {order.paymentStatus === "waiting_payment" && (
+                        <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                          ⚠️ Segera lakukan pembayaran untuk melanjutkan pesanan
+                        </div>
+                      )}
+                      {order.paymentStatus === "waiting_confirmation" && (
+                        <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                          ⏳ Bukti pembayaran sedang diverifikasi oleh admin
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/pesanan/${order.id}`}>
-                        <Button variant="outline" size="sm" data-testid={`button-view-detail-${order.id}`}>
-                          Lihat Detail
-                        </Button>
-                      </Link>
+                      {order.paymentStatus === "waiting_payment" ? (
+                        <Link href={`/payment/${order.id}`}>
+                          <Button size="sm" data-testid={`button-payment-${order.id}`}>
+                            Bayar Sekarang
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href={`/pesanan/${order.id}`}>
+                          <Button variant="outline" size="sm" data-testid={`button-view-detail-${order.id}`}>
+                            Lihat Detail
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </CardHeader>

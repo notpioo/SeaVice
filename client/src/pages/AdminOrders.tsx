@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,6 +90,7 @@ export default function AdminOrders() {
         description: "Status pesanan berhasil diperbarui",
       });
       setIsEditDialogOpen(false);
+      setIsViewDialogOpen(false); // Close view dialog as well if it was open
       setSelectedOrder(null);
     },
     onError: (error: any) => {
@@ -597,6 +597,70 @@ export default function AdminOrders() {
                 <Label className="text-xs text-muted-foreground">Layanan</Label>
                 <p className="font-semibold">{selectedOrder.serviceName}</p>
               </div>
+
+              {/* Payment Proof Display and Confirmation Buttons */}
+              {selectedOrder.paymentProofUrl && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Bukti Pembayaran</Label>
+                  <div className="mt-2 border rounded-lg overflow-hidden">
+                    <img 
+                      src={selectedOrder.paymentProofUrl} 
+                      alt="Payment Proof" 
+                      className="w-full h-auto max-h-96 object-contain"
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    {selectedOrder.paymentStatus === "waiting_confirmation" && (
+                      <>
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            updateMutation.mutate({ 
+                              id: selectedOrder.id, 
+                              data: { 
+                                paymentStatus: "confirmed",
+                                status: "processing"
+                              } 
+                            });
+                          }}
+                          className="flex-1"
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Konfirmasi Pembayaran
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => {
+                            updateMutation.mutate({ 
+                              id: selectedOrder.id, 
+                              data: { 
+                                paymentStatus: "rejected"
+                              } 
+                            });
+                          }}
+                          className="flex-1"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Tolak
+                        </Button>
+                      </>
+                    )}
+                    {selectedOrder.paymentStatus === "confirmed" && (
+                      <Badge variant="default" className="w-full justify-center">
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Pembayaran Dikonfirmasi
+                      </Badge>
+                    )}
+                    {selectedOrder.paymentStatus === "rejected" && (
+                      <Badge variant="destructive" className="w-full justify-center">
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Pembayaran Ditolak
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label className="text-xs text-muted-foreground">User ID</Label>

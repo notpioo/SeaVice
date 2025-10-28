@@ -39,28 +39,45 @@ function mapDocToOrder(id: string, data: DocumentData): Order {
 
 export async function createOrder(orderData: InsertOrder): Promise<Order> {
   try {
+    console.log("📝 Creating order in Firestore:", orderData);
+    
     const now = new Date();
     const deliveryDate = orderData.deliveryDate ? new Date(orderData.deliveryDate) : null;
     
-    const docRef = await addDoc(collection(db, ORDERS_COLLECTION), {
+    const firestoreData = {
       ...orderData,
       orderDate: Timestamp.fromDate(now),
       deliveryDate: deliveryDate ? Timestamp.fromDate(deliveryDate) : null,
       createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
-    });
+    };
+    
+    console.log("📤 Firestore data:", firestoreData);
+    
+    const docRef = await addDoc(collection(db, ORDERS_COLLECTION), firestoreData);
+    console.log("✅ Order document created with ID:", docRef.id);
 
     const newDoc = await getDoc(docRef);
     const data = newDoc.data();
     
     if (!data) {
+      console.error("❌ Failed to retrieve created order data");
       throw new Error("Gagal mengambil data pesanan yang baru dibuat");
     }
     
-    return mapDocToOrder(newDoc.id, data);
-  } catch (error) {
-    console.error("Error creating order:", error);
-    throw new Error("Gagal membuat pesanan");
+    const order = mapDocToOrder(newDoc.id, data);
+    console.log("✅ Order created successfully:", order);
+    
+    return order;
+  } catch (error: any) {
+    console.error("❌ Error creating order:", error);
+    console.error("Error details:", error.message, error.code);
+    
+    if (error.code === 'permission-denied') {
+      throw new Error("Anda tidak memiliki izin untuk membuat pesanan. Silakan login kembali.");
+    }
+    
+    throw new Error(error.message || "Gagal membuat pesanan. Silakan coba lagi.");
   }
 }
 

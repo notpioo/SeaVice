@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Service Worker & Re-register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #e55a28;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Service Worker Debug & Fix Tool</h1>
+        <p>Gunakan tool ini untuk memperbaiki masalah push notifications</p>
+        
+        <div>
+            <button onclick="clearAndReregister()">1. Clear & Re-register Service Worker</button>
+            <button onclick="checkPermissions()">2. Check Permissions</button>
+            <button onclick="testNotification()">3. Test Local Notification</button>
+        </div>
+        
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function clearAndReregister() {
+            try {
+                log('🧹 Starting cleanup...', 'info');
+                
+                // Unregister all service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                log(`Found ${registrations.length} service workers`, 'info');
+                
+                for (let registration of registrations) {
+                    log(`Unregistering: ${registration.active?.scriptURL}`, 'info');
+                    await registration.unregister();
+                }
+                
+                log('✅ All service workers unregistered', 'success');
+                
+                // Wait a bit
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Register firebase-messaging-sw.js
+                log('📦 Registering firebase-messaging-sw.js...', 'info');
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                    scope: '/',
+                    type: 'classic'
+                });
+                
+                log('✅ Firebase Messaging SW registered!', 'success');
+                
+                // Wait for it to be ready
+                await navigator.serviceWorker.ready;
+                log('✅ Service Worker is ready!', 'success');
+                
+                log('', 'info');
+                log('🎉 SUCCESS! Sekarang:', 'success');
+                log('1. Tutup tab ini', 'success');
+                log('2. Buka aplikasi utama', 'success');
+                log('3. Login kembali untuk register token baru', 'success');
+                log('4. Test kirim notifikasi', 'success');
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function checkPermissions() {
+            try {
+                log('🔍 Checking permissions...', 'info');
+                
+                const permission = Notification.permission;
+                log(`Notification Permission: ${permission}`, permission === 'granted' ? 'success' : 'error');
+                
+                if (permission !== 'granted') {
+                    log('⚠️ Permission not granted! Requesting...', 'info');
+                    const result = await Notification.requestPermission();
+                    log(`Permission result: ${result}`, result === 'granted' ? 'success' : 'error');
+                }
+                
+                // Check service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                log(`Active Service Workers: ${registrations.length}`, 'info');
+                
+                registrations.forEach((reg, i) => {
+                    log(`SW ${i+1}: ${reg.active?.scriptURL || 'unknown'}`, 'info');
+                    log(`  State: ${reg.active?.state || 'unknown'}`, 'info');
+                });
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testNotification() {
+            try {
+                log('🔔 Testing local notification...', 'info');
+                
+                if (Notification.permission !== 'granted') {
+                    log('❌ Permission not granted! Click "Check Permissions" first', 'error');
+                    return;
+                }
+                
+                const registration = await navigator.serviceWorker.ready;
+                
+                await registration.showNotification('Test Notification', {
+                    body: 'This is a test notification from service worker',
+                    icon: '/icons/pwa-192x192.png',
+                    tag: 'test-notification'
+                });
+                
+                log('✅ Test notification sent! Check if it appeared.', 'success');
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto check on load
+        window.addEventListener('load', () => {
+            log('🚀 Service Worker Debug Tool loaded', 'info');
+            log('', 'info');
+        });
+    </script>
+</body>
+</html>

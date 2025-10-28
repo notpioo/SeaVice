@@ -14,10 +14,14 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+try {
+  firebase.initializeApp(firebaseConfig);
+  console.log('🔥 Firebase app initialized');
+} catch (error) {
+  console.error('❌ Firebase initialization error:', error);
+}
 
 const messaging = firebase.messaging();
-
 console.log('🔥 Firebase Messaging Service Worker initialized');
 
 // Workbox PWA caching
@@ -137,4 +141,57 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('install', (event) => {
   console.log('📦 [SW] Service Worker installed');
   self.skipWaiting();
+});
+
+// CRITICAL: Add direct push event listener as fallback
+self.addEventListener('push', (event) => {
+  console.log('📩 [SW PUSH EVENT] Push event received!');
+  console.log('📩 [SW PUSH EVENT] Event data:', event.data ? event.data.text() : 'No data');
+  
+  if (!event.data) {
+    console.error('❌ [SW PUSH EVENT] No data in push event');
+    return;
+  }
+
+  let payload;
+  try {
+    payload = event.data.json();
+    console.log('📩 [SW PUSH EVENT] Parsed payload:', JSON.stringify(payload));
+  } catch (error) {
+    console.error('❌ [SW PUSH EVENT] Error parsing push data:', error);
+    return;
+  }
+
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'SeaVice';
+  const notificationBody = payload.notification?.body || payload.data?.body || 'Ada pesan baru untuk Anda';
+  const messageId = payload.data?.messageId || `seavice-${Date.now()}`;
+  
+  console.log('📩 [SW PUSH EVENT] Showing notification:', notificationTitle, notificationBody);
+
+  const notificationOptions = {
+    body: notificationBody,
+    icon: '/icons/pwa-192x192.png',
+    badge: '/icons/pwa-192x192.png',
+    image: payload.notification?.image || payload.data?.imageUrl,
+    data: {
+      ...payload.data,
+      url: payload.data?.actionUrl || '/',
+      messageId: messageId
+    },
+    vibrate: [300, 100, 200, 100, 300],
+    tag: messageId,
+    requireInteraction: true,
+    renotify: false,
+    silent: false
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(notificationTitle, notificationOptions)
+      .then(() => {
+        console.log('✅ [SW PUSH EVENT] Notification shown successfully');
+      })
+      .catch((error) => {
+        console.error('❌ [SW PUSH EVENT] Error showing notification:', error);
+      })
+  );
 });

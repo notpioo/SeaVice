@@ -12,6 +12,7 @@ import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import Orders from "./pages/Orders";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import Payment from "./pages/Payment";
 import Admin from "./pages/Admin";
 import AdminOrders from "./pages/AdminOrders";
 import AdminVouchers from "./pages/AdminVouchers";
@@ -21,7 +22,7 @@ import NotFound from "./pages/not-found";
 // import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
 import { Toaster } from "./components/ui/toaster";
 import { useEffect } from "react";
-import { requestNotificationPermission, saveFCMToken, setupMessageListener } from "@/lib/messaging";
+import { requestNotificationPermission, saveFCMToken, setupMessageListener, cleanupDuplicateTokens } from "@/lib/messaging";
 import { useToast } from "./hooks/use-toast";
 import { useAuth } from "./contexts/AuthContext";
 
@@ -29,57 +30,21 @@ function AppContent() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Register Firebase Cloud Messaging service worker
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(async (registrations) => {
-        console.log('🔍 Found service workers:', registrations.length);
-
-        // Cek apakah firebase-messaging-sw.js sudah terdaftar
-        const fcmSW = registrations.find(reg => 
-          reg.active?.scriptURL.includes('firebase-messaging-sw.js')
-        );
-
-        if (fcmSW) {
-          console.log('✅ FCM Service Worker already registered');
-          console.log('✅ Active SW:', fcmSW.active?.scriptURL);
-          return;
-        }
-
-        // Hanya unregister service worker yang bukan FCM SW
-        for (const registration of registrations) {
-          if (!registration.active?.scriptURL.includes('firebase-messaging-sw.js')) {
-            console.log('🗑️ Unregistering non-FCM service worker:', registration.active?.scriptURL);
-            await registration.unregister();
-          }
-        }
-
-        // Register firebase-messaging-sw.js
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-          scope: '/',
-          type: 'classic'
-        });
-
-        console.log('✅ FCM Service Worker registered');
-
-        // Tunggu hingga service worker aktif
-        await navigator.serviceWorker.ready;
-        console.log('✅ Service Worker ready');
-
-        const activeWorker = registration.active;
-        if (activeWorker) {
-          console.log('✅ Active SW:', activeWorker.scriptURL);
-          console.log('✅ SW State:', activeWorker.state);
-        }
-      }).catch((error) => {
-        console.error('❌ FCM Service Worker registration failed:', error);
-      });
-    }
-  }, []);
-
   // Setup Firebase Cloud Messaging for logged in users
+  // Note: Service worker registration is now handled in requestNotificationPermission()
   useEffect(() => {
     if (!user) return;
+
+    // Cleanup duplicate tokens first
+    cleanupDuplicateTokens(user.id)
+      .then((deletedCount) => {
+        if (deletedCount > 0) {
+          console.log(`🧹 Cleaned up ${deletedCount} duplicate tokens`);
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Error cleaning up tokens:', error);
+      });
 
     requestNotificationPermission()
       .then(async (token) => {
@@ -150,6 +115,16 @@ function AppContent() {
           <Route path="/order-confirmation/:orderId">
             <ProtectedRoute>
               <OrderConfirmation />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/pesanan/:orderId">
+            <ProtectedRoute>
+              <OrderConfirmation />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/payment/:orderId">
+            <ProtectedRoute>
+              <Payment />
             </ProtectedRoute>
           </Route>
           <Route path="/admin">

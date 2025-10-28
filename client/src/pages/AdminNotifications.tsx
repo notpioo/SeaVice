@@ -483,13 +483,43 @@ export default function AdminNotifications() {
                 name="imageUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL Gambar (Opsional)</FormLabel>
+                    <FormLabel>Gambar Notifikasi (Opsional)</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="https://example.com/image.jpg"
-                        data-testid="input-image"
-                      />
+                      <div className="space-y-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const formData = new FormData();
+                              formData.append('image', file);
+                              try {
+                                const response = await fetch('/api/upload', {
+                                  method: 'POST',
+                                  body: formData,
+                                });
+                                const data = await response.json();
+                                if (data.imageUrl) {
+                                  field.onChange(data.imageUrl);
+                                }
+                              } catch (error) {
+                                console.error('Upload error:', error);
+                              }
+                            }
+                          }}
+                          data-testid="input-image"
+                        />
+                        {field.value && (
+                          <div className="mt-2">
+                            <img
+                              src={field.value}
+                              alt="Preview"
+                              className="w-32 h-32 object-cover rounded-lg border"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormDescription>
                       Gambar akan ditampilkan di notifikasi

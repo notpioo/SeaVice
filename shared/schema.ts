@@ -27,23 +27,27 @@ export interface Service {
   id: string;
   title: string;
   description: string;
-  category: string;
   price: number;
+  category: string;
   imageUrl?: string;
   features: string[];
   deliveryTime: string;
+  orderCount: number;
+  rating: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export const insertServiceSchema = z.object({
-  title: z.string().min(3, "Judul harus minimal 3 karakter"),
-  description: z.string().min(10, "Deskripsi harus minimal 10 karakter"),
-  category: z.string().min(2, "Kategori harus diisi"),
+  title: z.string().min(1, "Judul harus diisi"),
+  description: z.string().min(1, "Deskripsi harus diisi"),
   price: z.number().min(0, "Harga harus positif"),
-  imageUrl: z.string().optional(),
+  category: z.string().min(1, "Kategori harus diisi"),
+  imageUrl: z.string().url("URL gambar tidak valid").optional(),
   features: z.array(z.string()).min(1, "Minimal 1 fitur harus diisi"),
   deliveryTime: z.string().min(1, "Waktu pengerjaan harus diisi"),
+  orderCount: z.number().min(0).default(0),
+  rating: z.number().min(0).max(5).default(5),
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
@@ -71,6 +75,8 @@ export interface Order {
   discountAmount?: number;
   finalPrice: number;
   status: OrderStatus;
+  paymentProofUrl?: string;
+  paymentStatus?: "waiting_payment" | "waiting_confirmation" | "confirmed" | "rejected";
   notes?: string;
   orderDate: Date;
   deliveryDate?: Date;
@@ -88,6 +94,8 @@ export const insertOrderSchema = z.object({
   discountAmount: z.number().min(0).optional(),
   finalPrice: z.number().min(0, "Harga final harus positif"),
   status: orderStatusSchema.default("pending"),
+  paymentProofUrl: z.string().optional(),
+  paymentStatus: z.enum(["waiting_payment", "waiting_confirmation", "confirmed", "rejected"]).optional().default("waiting_payment"),
   notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
   deliveryDate: z.string().optional(),
 });
@@ -96,6 +104,8 @@ export type InsertOrder = z.infer<typeof insertOrderSchema>;
 
 export const updateOrderSchema = z.object({
   status: orderStatusSchema.optional(),
+  paymentProofUrl: z.string().optional(),
+  paymentStatus: z.enum(["waiting_payment", "waiting_confirmation", "confirmed", "rejected"]).optional(),
   notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
   deliveryDate: z.string().optional(),
 });

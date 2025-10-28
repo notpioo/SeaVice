@@ -79,7 +79,7 @@ export default defineConfig({
         clientsClaim: true
       },
       devOptions: {
-        enabled: true,
+        enabled: false, // Disable PWA in dev mode to avoid conflict with Firebase Messaging SW
         type: 'module'
       }
     }),

@@ -154,9 +154,20 @@ export default function Admin() {
 
   const onSubmit = (data: InsertService) => {
     if (editingService) {
-      updateMutation.mutate({ id: editingService.id, data });
+      updateMutation.mutate({
+        id: editingService.id,
+        data: {
+          ...data,
+          orderCount: editingService.orderCount || 0,
+          rating: editingService.rating || 5.0,
+        },
+      });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate({
+        ...data,
+        orderCount: 0,
+        rating: 5.0,
+      });
     }
   };
 
@@ -272,6 +283,13 @@ export default function Admin() {
                             <span className="text-muted-foreground truncate">{service.deliveryTime}</span>
                             <span className="text-muted-foreground whitespace-nowrap">
                               {service.features.length} fitur
+                            </span>
+                            {/* Placeholder for real data */}
+                            <span className="text-muted-foreground whitespace-nowrap">
+                              Pesanan: {service.orderCount || 0}
+                            </span>
+                            <span className="text-muted-foreground whitespace-nowrap">
+                              Rating: {service.rating !== undefined ? service.rating.toFixed(1) : 'N/A'}
                             </span>
                           </div>
                         </div>
@@ -425,9 +443,43 @@ export default function Admin() {
                       name="imageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>URL Gambar (Opsional)</FormLabel>
+                          <FormLabel>Gambar Layanan (Opsional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://..." {...field} data-testid="input-service-image" />
+                            <div className="space-y-2">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const formData = new FormData();
+                                    formData.append('image', file);
+                                    try {
+                                      const response = await fetch('/api/upload', {
+                                        method: 'POST',
+                                        body: formData,
+                                      });
+                                      const data = await response.json();
+                                      if (data.imageUrl) {
+                                        field.onChange(data.imageUrl);
+                                      }
+                                    } catch (error) {
+                                      console.error('Upload error:', error);
+                                    }
+                                  }
+                                }}
+                                data-testid="input-service-image"
+                              />
+                              {field.value && (
+                                <div className="mt-2">
+                                  <img
+                                    src={field.value}
+                                    alt="Preview"
+                                    className="w-32 h-32 object-cover rounded-lg border"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

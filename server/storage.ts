@@ -36,3 +36,16 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+
+// Update order with payment proof
+export async function uploadPaymentProof(orderId: string, imageUrl: string) {
+  const { db } = await import("./index");
+  const { doc, updateDoc, Timestamp } = await import("firebase/firestore");
+
+  const orderRef = doc(db, "orders", orderId);
+  await updateDoc(orderRef, {
+    paymentProofUrl: imageUrl,
+    paymentStatus: "waiting_confirmation",
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
+}
