@@ -20,9 +20,18 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: false }));
 
 // Create uploads directory if it doesn't exist
-const uploadsDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Use /tmp for production (Railway, cloud platforms) as they have read-only filesystems
+const uploadsDir = process.env.NODE_ENV === 'production' 
+  ? '/tmp/uploads' 
+  : path.join(process.cwd(), "uploads");
+
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (error) {
+  console.error('Failed to create uploads directory:', error);
+  // Continue anyway, let multer handle the error
 }
 
 // Configure multer for file uploads
