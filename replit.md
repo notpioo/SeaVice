@@ -209,3 +209,13 @@ Untuk membuat user dengan role admin:
   - Users receive:
     - "✅ Pembayaran Dikonfirmasi" when payment is approved
     - "❌ Pembayaran Ditolak" when payment is rejected
+
+### October 29, 2025
+- **Description Line Break Fix**:
+  - Added `whitespace-pre-line` CSS class to all service description displays
+  - Service descriptions now properly preserve line breaks and newlines entered by admin
+  - Applied to:
+    - Services catalog listing (with 2-line truncation for layout consistency)
+    - Service detail page (mobile view - full description with line breaks)
+    - Service detail page (desktop view - full description with line breaks)
+  - Users can now format service descriptions with multiple paragraphs for better readability

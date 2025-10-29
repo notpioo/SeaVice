@@ -163,6 +163,28 @@
 [x] 4. Kept ./uploads for development (Replit) environment
 [x] 5. Ready for Railway deployment
 
+## Form Upload & Order Detail Fixes (October 29, 2025)
+[x] 1. Fixed imageUrl validation to accept both local paths and URLs (removed strict URL validation)
+[x] 2. Fixed "URL gambar tidak valid" error when uploading images from device
+[x] 3. Added WhatsApp button (wa.me/6285709557572) for processing orders with confirmed payment
+[x] 4. Updated OrderConfirmation page conditional rendering for WhatsApp button
+[x] 5. Reviewed by architect - PASSED with no issues
+[x] 6. Workflow running successfully
+
+## Bug Fixes Completed ✅
+✅ **Bug 1**: Form tambah/edit layanan sekarang bisa upload gambar tanpa error "URL gambar tidak valid"
+✅ **Bug 2**: Pesanan dengan status "Sedang Dikerjakan" dan pembayaran terkonfirmasi sekarang menampilkan tombol WhatsApp
+
+## Image Aspect Ratio Update (October 29, 2025)
+[x] 1. Changed catalog image aspect ratio from 4:3 to 4:5 (Instagram portrait 1080x1350) in Services.tsx
+[x] 2. Changed detail image aspect ratio from video to 4:5 in ServiceDetail.tsx (mobile & desktop)
+[x] 3. Ensured consistency across all image displays (with/without image fallbacks)
+[x] 4. Reviewed by architect - PASSED with no issues
+[x] 5. Workflow running successfully
+
+## Image Updates Completed ✅
+✅ **Instagram Portrait Format**: Semua gambar katalog layanan sekarang menggunakan aspect ratio 4:5 (1080x1350 pixel) seperti format konten Instagram
+
 ## 🎯 LATEST MIGRATION UPDATE - October 29, 2025
 
 ### ✅ All Items Marked as Completed

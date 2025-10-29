@@ -49,7 +49,7 @@ export default function Services() {
                 {/* Compact Image */}
                 <Link href={`/layanan/${service.id}`} className="block">
                   {service.imageUrl ? (
-                    <div className="aspect-[4/3] overflow-hidden bg-muted">
+                    <div className="aspect-[4/5] overflow-hidden bg-muted">
                       <img
                         src={service.imageUrl}
                         alt={service.title}
@@ -57,7 +57,7 @@ export default function Services() {
                       />
                     </div>
                   ) : (
-                    <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-orange-600/10 flex items-center justify-center">
+                    <div className="aspect-[4/5] bg-gradient-to-br from-primary/10 to-orange-600/10 flex items-center justify-center">
                       <Package className="h-12 w-12 text-primary/40" />
                     </div>
                   )}
@@ -78,7 +78,7 @@ export default function Services() {
                   </div>
                   
                   {/* Description */}
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3" data-testid={`text-description-${service.id}`}>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3 whitespace-pre-line" data-testid={`text-description-${service.id}`}>
                     {service.description}
                   </p>
                   

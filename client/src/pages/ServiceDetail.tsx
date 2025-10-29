@@ -286,7 +286,7 @@ export default function ServiceDetail() {
       <div className="md:hidden pb-20">
         {/* Image with Overlay Back Button */}
         {service.imageUrl ? (
-          <div className="relative aspect-video bg-muted">
+          <div className="relative aspect-[4/5] bg-muted">
             <img
               src={service.imageUrl}
               alt={service.title}
@@ -308,7 +308,7 @@ export default function ServiceDetail() {
             </div>
           </div>
         ) : (
-          <div className="relative aspect-video bg-muted">
+          <div className="relative aspect-[4/5] bg-muted">
             <Package className="absolute inset-0 m-auto h-32 w-32 text-muted-foreground/20" />
             {/* Overlay Back Button */}
             <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/40 to-transparent">
@@ -366,7 +366,7 @@ export default function ServiceDetail() {
             <h2 className="text-sm font-semibold">Deskripsi Layanan</h2>
           </CardHeader>
           <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-description">
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line" data-testid="text-description">
               {service.description}
             </p>
           </CardContent>
@@ -437,11 +437,11 @@ export default function ServiceDetail() {
                 <img
                   src={service.imageUrl}
                   alt={service.title}
-                  className="w-full aspect-video object-cover"
+                  className="w-full aspect-[4/5] object-cover"
                   data-testid="img-service"
                 />
               ) : (
-                <div className="w-full aspect-video bg-gradient-to-br from-primary/20 via-orange-600/20 to-primary/10 flex items-center justify-center">
+                <div className="w-full aspect-[4/5] bg-gradient-to-br from-primary/20 via-orange-600/20 to-primary/10 flex items-center justify-center">
                   <Package className="h-32 w-32 text-primary/30" />
                 </div>
               )}
@@ -459,7 +459,7 @@ export default function ServiceDetail() {
               <CardContent className="space-y-6">
                 {/* Description */}
                 <div>
-                  <p className="text-muted-foreground leading-relaxed" data-testid="text-description">
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-line" data-testid="text-description">
                     {service.description}
                   </p>
                 </div>
