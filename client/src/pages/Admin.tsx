@@ -455,7 +455,7 @@ export default function Admin() {
                                     const formData = new FormData();
                                     formData.append('image', file);
                                     try {
-                                      const response = await fetch('/api/upload', {
+                                      const response = await fetch('/api/upload-service-image', {
                                         method: 'POST',
                                         body: formData,
                                       });
