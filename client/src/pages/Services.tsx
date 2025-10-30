@@ -32,7 +32,7 @@ export default function Services() {
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden">
-                <Skeleton className="h-40 w-full" />
+                <Skeleton className="aspect-[4/5] md:aspect-square w-full" />
                 <div className="p-4 space-y-2">
                   <Skeleton className="h-5 w-3/4" />
                   <Skeleton className="h-4 w-full" />
@@ -45,79 +45,80 @@ export default function Services() {
         ) : services && services.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {services.map((service) => (
-              <Card key={service.id} className="group flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1" data-testid={`card-service-${service.id}`}>
-                {/* Compact Image */}
-                <Link href={`/layanan/${service.id}`} className="block">
-                  {service.imageUrl ? (
-                    <div className="aspect-[4/5] overflow-hidden bg-muted">
-                      <img
-                        src={service.imageUrl}
-                        alt={service.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-[4/5] bg-gradient-to-br from-primary/10 to-orange-600/10 flex items-center justify-center">
-                      <Package className="h-12 w-12 text-primary/40" />
-                    </div>
-                  )}
-                </Link>
-                
-                {/* Compact Content */}
-                <div className="flex-1 flex flex-col p-4">
-                  {/* Title & Category */}
-                  <div className="mb-2">
-                    <Badge variant="secondary" className="text-xs mb-2">
-                      {service.category}
-                    </Badge>
-                    <Link href={`/layanan/${service.id}`}>
-                      <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors" data-testid={`text-title-${service.id}`}>
-                        {service.title}
-                      </h3>
-                    </Link>
-                  </div>
-                  
-                  {/* Description */}
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3 whitespace-pre-line" data-testid={`text-description-${service.id}`}>
-                    {service.description}
-                  </p>
-                  
-                  {/* Features - Show only 2 */}
-                  <div className="space-y-1.5 mb-3 flex-1">
-                    {service.features.slice(0, 2).map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-xs line-clamp-1">{feature}</span>
+              <Link key={service.id} href={`/layanan/${service.id}`}>
+                <Card className="group flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer" data-testid={`card-service-${service.id}`}>
+                  {/* Image with Category Badge Overlay */}
+                  <div className="relative">
+                    {service.imageUrl ? (
+                      <div className="aspect-square overflow-hidden bg-muted">
+                        <img
+                          src={service.imageUrl}
+                          alt={service.title}
+                          className="w-full h-full object-contain"
+                          data-testid={`img-service-${service.id}`}
+                        />
                       </div>
-                    ))}
-                    {service.features.length > 2 && (
-                      <p className="text-xs text-muted-foreground pl-5">
-                        +{service.features.length - 2} lainnya
-                      </p>
+                    ) : (
+                      <div className="aspect-square bg-gradient-to-br from-primary/20 via-orange-600/20 to-primary/10 flex items-center justify-center">
+                        <Package className="h-12 w-12 md:h-16 md:w-16 text-primary/30" />
+                      </div>
                     )}
+                    
+                    {/* Category Badge Overlay */}
+                    <div className="absolute top-2 left-2">
+                      <Badge variant="secondary" className="text-xs md:text-sm px-2 py-1 shadow-md">
+                        {service.category}
+                      </Badge>
+                    </div>
                   </div>
-                  
-                  {/* Delivery Time */}
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3 pb-3 border-b">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{service.deliveryTime}</span>
-                  </div>
-                  
-                  {/* Price & CTA */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-lg font-bold text-primary" data-testid={`text-price-${service.id}`}>
+
+                  {/* Card Content */}
+                  <div className="p-2.5 md:p-4 flex flex-col flex-1">
+                    {/* Title */}
+                    <h3 className="font-bold text-xs md:text-base mb-1.5 line-clamp-2 group-hover:text-primary transition-colors leading-tight" data-testid={`text-title-${service.id}`}>
+                      {service.title}
+                    </h3>
+
+                    {/* Features - Show only 1 on mobile, 2 on desktop */}
+                    <div className="space-y-0.5 mb-2 flex-1">
+                      {service.features.slice(0, 1).map((feature, idx) => (
+                        <div key={idx} className="md:hidden flex items-start gap-1" data-testid={`text-feature-${service.id}-${idx}`}>
+                          <CheckCircle2 className="h-2.5 w-2.5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-[9px] text-muted-foreground line-clamp-1">
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                      {service.features.slice(0, 2).map((feature, idx) => (
+                        <div key={idx} className="hidden md:flex items-start gap-1.5" data-testid={`text-feature-${service.id}-${idx}`}>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-xs text-muted-foreground line-clamp-1">
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                      <p className="text-[9px] md:text-xs text-muted-foreground ml-3.5 md:ml-5">
+                        +{service.features.length - 1} lainnya
+                      </p>
+                    </div>
+
+                    {/* Delivery Time */}
+                    <div className="flex items-center gap-1 text-muted-foreground mb-2">
+                      <Clock className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" />
+                      <span className="text-[9px] md:text-xs" data-testid={`text-delivery-${service.id}`}>
+                        {service.deliveryTime}
+                      </span>
+                    </div>
+
+                    {/* Price Only */}
+                    <div className="mt-auto">
+                      <p className="text-sm md:text-lg font-bold text-primary" data-testid={`text-price-${service.id}`}>
                         Rp {service.price.toLocaleString('id-ID')}
                       </p>
                     </div>
-                    <Link href={`/layanan/${service.id}`}>
-                      <Button size="sm" className="h-8 text-xs" data-testid={`button-order-${service.id}`}>
-                        Pesan
-                      </Button>
-                    </Link>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         ) : (

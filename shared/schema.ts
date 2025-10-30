@@ -43,7 +43,7 @@ export const insertServiceSchema = z.object({
   description: z.string().min(1, "Deskripsi harus diisi"),
   price: z.number().min(0, "Harga harus positif"),
   category: z.string().min(1, "Kategori harus diisi"),
-  imageUrl: z.string().min(1, "Gambar harus diisi").optional().or(z.literal("")),
+  imageUrl: z.string().optional(),
   features: z.array(z.string()).min(1, "Minimal 1 fitur harus diisi"),
   deliveryTime: z.string().min(1, "Waktu pengerjaan harus diisi"),
   orderCount: z.number().min(0).default(0),

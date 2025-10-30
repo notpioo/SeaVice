@@ -102,12 +102,12 @@ export default function ServiceDetail() {
       setAppliedVoucher(null);
       setDiscountAmount(0);
       setVoucherCode("");
-      
+
       toast({
         title: "Pesanan Berhasil Dibuat!",
         description: "Silakan lakukan pembayaran untuk melanjutkan pesanan Anda.",
       });
-      
+
       // Redirect to payment page
       setTimeout(() => {
         setLocation(`/payment/${order.id}`);
@@ -198,7 +198,7 @@ export default function ServiceDetail() {
       discountAmount,
       voucherCode: appliedVoucher?.code,
     });
-    
+
     try {
       const orderData: InsertOrder = {
         userId: user.id,
@@ -286,11 +286,11 @@ export default function ServiceDetail() {
       <div className="md:hidden pb-20">
         {/* Image with Overlay Back Button */}
         {service.imageUrl ? (
-          <div className="relative aspect-[4/5] bg-muted">
+          <div className="relative aspect-square bg-gradient-to-br from-primary/10 via-orange-500/10 to-primary/20 flex items-center justify-center">
             <img
               src={service.imageUrl}
               alt={service.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               data-testid="img-service"
             />
             {/* Overlay Back Button */}
@@ -308,7 +308,7 @@ export default function ServiceDetail() {
             </div>
           </div>
         ) : (
-          <div className="relative aspect-[4/5] bg-muted">
+          <div className="relative aspect-square bg-muted">
             <Package className="absolute inset-0 m-auto h-32 w-32 text-muted-foreground/20" />
             {/* Overlay Back Button */}
             <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/40 to-transparent">
@@ -432,16 +432,16 @@ export default function ServiceDetail() {
           {/* Left Column - Image & Description */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden max-w-lg mx-auto bg-gradient-to-br from-primary/10 via-orange-500/10 to-primary/20 p-8">
               {service.imageUrl ? (
                 <img
                   src={service.imageUrl}
                   alt={service.title}
-                  className="w-full aspect-[4/5] object-cover"
+                  className="w-full max-w-md mx-auto aspect-square object-contain"
                   data-testid="img-service"
                 />
               ) : (
-                <div className="w-full aspect-[4/5] bg-gradient-to-br from-primary/20 via-orange-600/20 to-primary/10 flex items-center justify-center">
+                <div className="w-full aspect-square bg-gradient-to-br from-primary/20 via-orange-600/20 to-primary/10 flex items-center justify-center">
                   <Package className="h-32 w-32 text-primary/30" />
                 </div>
               )}

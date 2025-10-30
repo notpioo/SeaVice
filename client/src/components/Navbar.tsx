@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Briefcase, ShoppingBag, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
@@ -12,7 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 
 
 export function Navbar({ className = "" }: { className?: string }) {
@@ -28,17 +34,17 @@ export function Navbar({ className = "" }: { className?: string }) {
 
   const navLinks = user?.role === "admin"
     ? [
-        { href: "/admin", label: "Admin Panel" },
-        { href: "/layanan", label: "Layanan" },
-        { href: "/pesanan", label: "Pesanan Saya" },
+        { href: "/admin", label: "Admin Panel", icon: LayoutDashboard },
+        { href: "/layanan", label: "Layanan", icon: Briefcase },
+        { href: "/pesanan", label: "Pesanan Saya", icon: ShoppingBag },
       ]
     : user
     ? [
-        { href: "/layanan", label: "Layanan" },
-        { href: "/pesanan", label: "Pesanan Saya" },
+        { href: "/layanan", label: "Layanan", icon: Briefcase },
+        { href: "/pesanan", label: "Pesanan Saya", icon: ShoppingBag },
       ]
     : [
-        { href: "/layanan", label: "Layanan" },
+        { href: "/layanan", label: "Layanan", icon: Briefcase },
       ];
 
   return (
@@ -117,70 +123,130 @@ export function Navbar({ className = "" }: { className?: string }) {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             data-testid="button-mobile-menu"
           >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <Menu className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <Link key={link.href} href={link.href}>
-                  <Button
-                    variant={location === link.href ? "secondary" : "ghost"}
-                    className="w-full justify-start font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                    data-testid={`link-mobile-${link.label.toLowerCase()}`}
-                  >
-                    {link.label}
-                  </Button>
-                </Link>
-              ))}
-              {user ? (
-                <>
-                  <div className="px-3 py-2 mt-2 border-t">
-                    <p className="text-sm font-medium">{user.displayName}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+        {/* Mobile Menu - Side Drawer */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="w-[80%] sm:w-[350px] p-0">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Menu Navigasi</SheetTitle>
+              <SheetDescription>Navigasi aplikasi SeaVice</SheetDescription>
+            </SheetHeader>
+            
+            <div className="flex flex-col h-full bg-background">
+              {/* Header dengan Title */}
+              <div className="px-6 py-5 border-b">
+                <h2 className="text-xl font-bold text-foreground">
+                  SeaVice
+                </h2>
+              </div>
+
+              {/* User Info Section */}
+              {user && (
+                <div className="px-6 py-6 border-b">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={user.photoURL} alt={user.displayName} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                        {user.displayName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-foreground truncate">
+                        {user.displayName}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      handleSignOut();
-                      setMobileMenuOpen(false);
-                    }}
-                    data-testid="button-mobile-logout"
-                  >
-                    Keluar
-                  </Button>
-                </>
-              ) : (
-                <div className="flex flex-col gap-2 mt-2 pt-2 border-t">
-                  <Link href="/login">
-                    <Button
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => setMobileMenuOpen(false)}
-                      data-testid="button-mobile-login"
-                    >
-                      Masuk
-                    </Button>
-                  </Link>
-                  <Link href="/register">
-                    <Button
-                      className="w-full"
-                      onClick={() => setMobileMenuOpen(false)}
-                      data-testid="button-mobile-register"
-                    >
-                      Daftar Sekarang
-                    </Button>
-                  </Link>
                 </div>
               )}
+
+              {/* Navigation Links */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="px-6 py-4">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Navigation
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {navLinks.map((link) => {
+                      const Icon = link.icon;
+                      const isActive = location === link.href;
+                      return (
+                        <Link key={link.href} href={link.href}>
+                          <button
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
+                              isActive
+                                ? "bg-orange-50 text-orange-600 font-medium"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                            onClick={() => setMobileMenuOpen(false)}
+                            data-testid={`link-mobile-${link.label.toLowerCase()}`}
+                          >
+                            <Icon className={`h-5 w-5 ${isActive ? "text-orange-600" : "text-gray-500"}`} />
+                            <span className="text-sm">{link.label}</span>
+                          </button>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Auth Section */}
+                {user ? (
+                  <div className="px-6 py-4 border-t">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      Account
+                    </div>
+                    <button
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-700 hover:bg-gray-50 transition-all"
+                      onClick={() => {
+                        handleSignOut();
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid="button-mobile-logout"
+                    >
+                      <LogOut className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm">Log out</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="px-6 py-4 border-t space-y-2">
+                    <Link href="/login">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setMobileMenuOpen(false)}
+                        data-testid="button-mobile-login"
+                      >
+                        Masuk
+                      </Button>
+                    </Link>
+                    <Link href="/register">
+                      <Button
+                        className="w-full"
+                        onClick={() => setMobileMenuOpen(false)}
+                        data-testid="button-mobile-register"
+                      >
+                        Daftar Sekarang
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t">
+                <p className="text-xs text-center text-muted-foreground">
+                  © 2025 SeaVice. All rights reserved.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );

@@ -52,7 +52,7 @@ export default function Admin() {
       description: "",
       category: "",
       price: 0,
-      imageUrl: "",
+      imageUrl: undefined,
       features: [],
       deliveryTime: "",
     },
@@ -60,8 +60,9 @@ export default function Admin() {
 
   const createMutation = useMutation({
     mutationFn: createService,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
+      await queryClient.refetchQueries({ queryKey: ["services"] });
       toast({
         title: "Layanan ditambahkan",
         description: "Layanan berhasil ditambahkan",
@@ -81,8 +82,9 @@ export default function Admin() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: InsertService }) =>
       updateService(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
+      await queryClient.refetchQueries({ queryKey: ["services"] });
       toast({
         title: "Layanan diperbarui",
         description: "Layanan berhasil diperbarui",
@@ -126,7 +128,7 @@ export default function Admin() {
         description: service.description,
         category: service.category,
         price: service.price,
-        imageUrl: service.imageUrl || "",
+        imageUrl: service.imageUrl || undefined,
         features: service.features,
         deliveryTime: service.deliveryTime,
       });
@@ -137,7 +139,7 @@ export default function Admin() {
         description: "",
         category: "",
         price: 0,
-        imageUrl: "",
+        imageUrl: undefined,
         features: [],
         deliveryTime: "",
       });
@@ -153,21 +155,32 @@ export default function Admin() {
   };
 
   const onSubmit = (data: InsertService) => {
+    console.log('📝 Submitting service data:', JSON.stringify(data, null, 2));
+    console.log('📝 imageUrl in data:', data.imageUrl);
+    console.log('📝 Form values:', JSON.stringify(form.getValues(), null, 2));
+    console.log('📝 Form imageUrl:', form.getValues('imageUrl'));
+    
     if (editingService) {
+      console.log('✏️ Updating service ID:', editingService.id);
+      const updateData = {
+        ...data,
+        orderCount: editingService.orderCount || 0,
+        rating: editingService.rating || 5.0,
+      };
+      console.log('✏️ Final update payload:', JSON.stringify(updateData, null, 2));
       updateMutation.mutate({
         id: editingService.id,
-        data: {
-          ...data,
-          orderCount: editingService.orderCount || 0,
-          rating: editingService.rating || 5.0,
-        },
+        data: updateData,
       });
     } else {
-      createMutation.mutate({
+      console.log('➕ Creating new service');
+      const createData = {
         ...data,
         orderCount: 0,
         rating: 5.0,
-      });
+      };
+      console.log('➕ Final create payload:', JSON.stringify(createData, null, 2));
+      createMutation.mutate(createData);
     }
   };
 
@@ -452,6 +465,7 @@ export default function Admin() {
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
+                                    console.log('📤 Uploading image to Cloudinary...');
                                     const formData = new FormData();
                                     formData.append('image', file);
                                     try {
@@ -460,11 +474,13 @@ export default function Admin() {
                                         body: formData,
                                       });
                                       const data = await response.json();
+                                      console.log('✅ Cloudinary response:', data);
                                       if (data.imageUrl) {
                                         field.onChange(data.imageUrl);
+                                        console.log('✅ Image URL set to form:', data.imageUrl);
                                       }
                                     } catch (error) {
-                                      console.error('Upload error:', error);
+                                      console.error('❌ Upload error:', error);
                                     }
                                   }
                                 }}

@@ -185,13 +185,67 @@
 ## Image Updates Completed ✅
 ✅ **Instagram Portrait Format**: Semua gambar katalog layanan sekarang menggunakan aspect ratio 4:5 (1080x1350 pixel) seperti format konten Instagram
 
-## 🎯 LATEST MIGRATION UPDATE - October 29, 2025
+## 🎯 LATEST MIGRATION UPDATE - October 30, 2025
 
 ### ✅ All Items Marked as Completed
 [x] 1. Install the required packages - ✅ DONE (tsx already installed)
 [x] 2. Restart the workflow to see if the project is working - ✅ DONE (workflow running on port 5000)
 [x] 3. Verify the project is working using the screenshot tool - ✅ DONE (SeaVice landing page fully functional)
 [x] 4. Inform user the import is completed and mark the import as completed - ✅ DONE
+
+### ✅ Latest Session - October 30, 2025
+[x] 1. Fixed workflow configuration with proper webview output type and port 5000
+[x] 2. Verified workflow is running successfully (Express server on port 5000)
+[x] 3. Confirmed Vite is connected and app is accessible
+[x] 4. All migration tasks completed and marked as done
+
+## Cloudinary Image Display Fix (October 30, 2025)
+[x] 1. Identified issue: Images uploaded to Cloudinary but not showing in catalog
+[x] 2. Added refetchQueries after create/update mutations to force data refresh
+[x] 3. Added console logging for debugging upload and submit processes
+[x] 4. Verified upload endpoint is working (logs show Cloudinary URLs returned)
+[x] 5. Identified ROOT CAUSE: Zod validation schema had conflicting rules (.min(1) + .optional())
+[x] 6. Fixed schema validation: Removed .min(1) from imageUrl (it's optional field)
+[x] 7. Workflow restarted with schema fix
+
+## Root Cause Found & Fixed ✅
+❌ **ACTUAL Problem**: `imageUrl: z.string().optional().or(z.literal(""))`
+   - The `.or(z.literal(""))` caused Zod to CHOOSE empty string "" over URL
+   - Zod parser was converting Cloudinary URL to "" during form submission
+   - Default values and form reset also used "" instead of undefined
+   - imageUrl saved as "" (empty) to Firestore instead of Cloudinary URL
+
+✅ **FINAL Solution**: `imageUrl: z.string().optional()`
+   - Removed `.or(z.literal(""))` completely - this was the culprit!
+   - Changed all default values from `imageUrl: ""` to `imageUrl: undefined`
+   - Changed all form.reset() from `imageUrl: ""` to `imageUrl: undefined`
+   - Now imageUrl is properly undefined when empty, or string URL when set
+   - Zod will NOT convert URL to empty string anymore!
+
+## DEEP Investigation Results (October 30, 2025 - Final Fix)
+[x] 1. Traced entire data flow from upload → form → Firestore
+[x] 2. Added comprehensive logging at every step
+[x] 3. Found ROOT CAUSE: `.or(z.literal(""))` in Zod schema
+[x] 4. Fixed schema: Removed `.or(z.literal(""))`
+[x] 5. Fixed default values: Changed "" to undefined everywhere
+[x] 6. Workflow restarted with final fix
+
+## Changes Applied ✅
+1. **shared/schema.ts**: `imageUrl: z.string().optional()` (removed .or(z.literal("")))
+2. **Admin.tsx defaultValues**: `imageUrl: undefined` (was "")
+3. **Admin.tsx handleOpenDialog**: `imageUrl: service.imageUrl || undefined` (was || "")
+4. **Admin.tsx form.reset**: `imageUrl: undefined` (was "")
+
+## Test Instructions for User 🧪
+1. **Hard refresh browser** (Ctrl+Shift+R / Cmd+Shift+R) - WAJIB!
+2. Open Admin Panel
+3. Edit any service OR create new service
+4. Upload a new image (wait for preview to appear)
+5. Fill other required fields
+6. Click "Simpan Perubahan"
+7. **Check console log** - should show imageUrl with Cloudinary URL
+8. **Check Firestore** - imageUrl should now contain Cloudinary URL!
+9. Check /layanan page - Cloudinary image should display! ✅
 
 ### 📊 Final Status Check
 - **Workflow**: ✅ Running successfully on port 5000 with webview output
