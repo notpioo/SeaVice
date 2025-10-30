@@ -13,6 +13,7 @@ import ServiceDetail from "./pages/ServiceDetail";
 import Orders from "./pages/Orders";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Payment from "./pages/Payment";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import AdminOrders from "./pages/AdminOrders";
 import AdminVouchers from "./pages/AdminVouchers";
@@ -125,6 +126,11 @@ function AppContent() {
           <Route path="/payment/:orderId">
             <ProtectedRoute>
               <Payment />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/profile">
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           </Route>
           <Route path="/admin">

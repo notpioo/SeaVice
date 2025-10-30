@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Briefcase, ShoppingBag, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, Briefcase, ShoppingBag, LayoutDashboard, LogOut, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
@@ -98,6 +98,11 @@ export function Navbar({ className = "" }: { className?: string }) {
                     </p>
                   </div>
                   <DropdownMenuSeparator />
+                  <Link href="/profile">
+                    <DropdownMenuItem>
+                      Profile Saya
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem onClick={handleSignOut} data-testid="button-logout">
                     Keluar
                   </DropdownMenuItem>
@@ -146,22 +151,35 @@ export function Navbar({ className = "" }: { className?: string }) {
               {/* User Info Section */}
               {user && (
                 <div className="px-6 py-6 border-b">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-14 w-14">
-                      <AvatarImage src={user.photoURL} alt={user.displayName} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                        {user.displayName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-foreground truncate">
-                        {user.displayName}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {user.email}
-                      </p>
-                    </div>
-                  </div>
+                  <Link href="/profile">
+                    <button
+                      className="w-full flex items-center gap-3 hover:bg-gray-50 rounded-lg p-3 -m-3 transition-all"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Avatar className="h-14 w-14">
+                        <AvatarImage src={user.photoURL} alt={user.displayName} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                          {user.displayName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold text-foreground truncate">
+                          {user.displayName}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <svg
+                        className="h-5 w-5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </Link>
                 </div>
               )}
 
