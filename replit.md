@@ -219,3 +219,28 @@ Untuk membuat user dengan role admin:
     - Service detail page (mobile view - full description with line breaks)
     - Service detail page (desktop view - full description with line breaks)
   - Users can now format service descriptions with multiple paragraphs for better readability
+
+### November 2, 2025
+- **Purchase Flow UX Overhaul**:
+  - **Complete OrderConfirmation Page Redesign**:
+    - Added breadcrumb navigation (Home → Riwayat Pesanan → Detail Pesanan)
+    - Added 4-step progress indicator (Pesan → Bayar → Konfirmasi → Selesai)
+    - Added countdown timer (24 hours) for payment deadline with live updates
+    - Integrated payment instructions directly in the page:
+      * Bank transfer details (BCA account, amount) with copy-to-clipboard functionality
+      * QRIS code display for mobile payments
+    - Integrated upload form directly in the page (no need for separate Payment page)
+    - Better layout with 2-column responsive design (order details left, upload/status right)
+    - Sticky upload card on desktop for better UX
+    - Different states for payment statuses (waiting_payment, waiting_confirmation, confirmed, rejected)
+    - Shows rejection reason if payment is rejected
+    - WhatsApp contact button for confirmed orders
+  - **Flow Improvements**:
+    - Changed redirect after order creation from `/payment/:orderId` to `/pesanan/:orderId` (OrderConfirmation)
+    - Changed redirect after upload from `/pesanan` (list) to `/pesanan/:orderId` (specific order)
+    - Payment page now serves as fallback if users navigate directly to it
+  - **Critical Bug Fixes**:
+    - Fixed uploadAttempts counter not updating between uploads (was allowing unlimited uploads)
+    - Upload mutation now explicitly refetches order data after success to ensure fresh uploadAttempts count
+    - Removed stale data dependency in toast messages
+    - Upload button already has defensive `isPending` check to prevent simultaneous submissions

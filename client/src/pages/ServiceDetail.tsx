@@ -108,9 +108,9 @@ export default function ServiceDetail() {
         description: "Silakan lakukan pembayaran untuk melanjutkan pesanan Anda.",
       });
 
-      // Redirect to payment page
+      // Redirect to order confirmation page
       setTimeout(() => {
-        setLocation(`/payment/${order.id}`);
+        setLocation(`/pesanan/${order.id}`);
       }, 500);
     },
     onError: (error: any) => {
@@ -209,6 +209,7 @@ export default function ServiceDetail() {
         finalPrice: finalPrice,
         status: "pending",
         paymentStatus: "waiting_payment",
+        uploadAttempts: 0,
         ...(values.notes && { notes: values.notes }),
         ...(appliedVoucher?.code && { voucherCode: appliedVoucher.code }),
         ...(discountAmount > 0 && { discountAmount }),

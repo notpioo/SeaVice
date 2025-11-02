@@ -64,7 +64,7 @@ export default function Payment() {
         title: "Bukti Pembayaran Terkirim",
         description: `Bukti pembayaran sedang diverifikasi (Upload ke-${newAttempts}/5)`,
       });
-      setLocation("/pesanan");
+      setLocation(`/pesanan/${orderId}`);
     },
     onError: (error: any) => {
       toast({
