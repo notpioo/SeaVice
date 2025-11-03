@@ -220,7 +220,7 @@ Untuk membuat user dengan role admin:
     - Service detail page (desktop view - full description with line breaks)
   - Users can now format service descriptions with multiple paragraphs for better readability
 
-### November 2, 2025
+### November 2, 2025 - Part 1
 - **Purchase Flow UX Overhaul**:
   - **Complete OrderConfirmation Page Redesign**:
     - Added breadcrumb navigation (Home → Riwayat Pesanan → Detail Pesanan)
@@ -244,3 +244,24 @@ Untuk membuat user dengan role admin:
     - Upload mutation now explicitly refetches order data after success to ensure fresh uploadAttempts count
     - Removed stale data dependency in toast messages
     - Upload button already has defensive `isPending` check to prevent simultaneous submissions
+
+### November 2, 2025 - Part 2
+- **Upload Flow Simplification & Consolidation**:
+  - **OrderConfirmation.tsx is now the main payment & upload page**:
+    * Restored upload mutation, state, and handlers to OrderConfirmation.tsx
+    * Upload forms embedded directly in the page for both "waiting_payment" and "rejected" statuses
+    * No more redirect to separate payment page - all actions in one place
+    * Better UX with countdown timer, payment instructions, and upload form on same page
+  - **Navigation Flow Updates**:
+    * "Bayar Sekarang" button in Orders.tsx → `/pesanan/:orderId` (OrderConfirmation)
+    * "Upload Bukti Baru" button in Orders.tsx → `/pesanan/:orderId` (OrderConfirmation)
+    * "Lihat Detail" button in Orders.tsx → `/pesanan/:orderId` (OrderConfirmation)
+  - **Payment.tsx Deprecated**:
+    * Payment.tsx (`/payment/:orderId`) is now unused/legacy
+    * All upload functionality consolidated in OrderConfirmation.tsx
+    * Cleaner architecture with single source of truth for payment flow
+  - **Benefits**:
+    * Users stay on one page throughout payment process
+    * Less confusion with multiple similar pages
+    * Better UX with breadcrumb, progress indicator, and embedded upload
+    * Easier to maintain with consolidated code

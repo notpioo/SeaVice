@@ -56,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload payment proof to Cloudinary
-  app.post("/api/upload-payment-proof", upload.single("image"), async (req, res) => {
+  app.post("/api/upload-payment-proof", upload.single("file"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).send({ message: "No file uploaded" });

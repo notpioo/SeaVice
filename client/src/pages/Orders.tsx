@@ -322,10 +322,10 @@ export default function Orders() {
                         </h3>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <p className="text-xs text-muted-foreground break-all">
+                        <p className="text-xs text-muted-foreground truncate">
                           ID: <span className="font-mono" data-testid={`text-order-id-${order.id}`}>{order.id.substring(0, 16)}...</span>
                         </p>
-                        <div data-testid={`badge-status-${order.id}`}>
+                        <div data-testid={`badge-status-${order.id}`} className="w-fit">
                           {getStatusBadge(order)}
                         </div>
                       </div>
@@ -370,13 +370,13 @@ export default function Orders() {
                     {/* Action Buttons */}
                     <div className="flex gap-2 pt-2">
                       {order.paymentStatus === "waiting_payment" ? (
-                        <Link href={`/payment/${order.id}`} className="flex-1">
+                        <Link href={`/pesanan/${order.id}`} className="flex-1">
                           <Button size="sm" className="w-full" data-testid={`button-payment-${order.id}`}>
                             Bayar Sekarang
                           </Button>
                         </Link>
                       ) : order.paymentStatus === "rejected" ? (
-                        <Link href={`/payment/${order.id}`} className="flex-1">
+                        <Link href={`/pesanan/${order.id}`} className="flex-1">
                           <Button size="sm" variant="destructive" className="w-full" data-testid={`button-reupload-${order.id}`}>
                             Upload Bukti Baru
                           </Button>

@@ -80,6 +80,8 @@ export interface Order {
   rejectionReason?: string;
   uploadAttempts?: number;
   notes?: string;
+  rating?: number;
+  review?: string;
   orderDate: Date;
   deliveryDate?: Date;
   createdAt: Date;
@@ -113,6 +115,8 @@ export const updateOrderSchema = z.object({
   rejectionReason: z.string().optional(),
   uploadAttempts: z.number().min(0).optional(),
   notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
+  rating: z.number().min(1).max(5).optional(),
+  review: z.string().max(500, "Ulasan maksimal 500 karakter").optional(),
   deliveryDate: z.string().optional(),
 });
 

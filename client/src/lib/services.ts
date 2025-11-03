@@ -93,3 +93,38 @@ export async function deleteService(id: string): Promise<void> {
   const serviceRef = doc(db, SERVICES_COLLECTION, id);
   await deleteDoc(serviceRef);
 }
+
+export async function updateServiceRating(serviceId: string): Promise<void> {
+  console.log('⭐ [Firestore] Updating service rating for:', serviceId);
+  
+  // Get all completed orders with ratings for this service
+  const ordersQuery = query(
+    collection(db, ORDERS_COLLECTION),
+    where("serviceId", "==", serviceId),
+    where("status", "==", "completed")
+  );
+  
+  const ordersSnapshot = await getDocs(ordersQuery);
+  const ratingsData = ordersSnapshot.docs
+    .map(doc => doc.data().rating)
+    .filter((rating): rating is number => typeof rating === 'number');
+  
+  if (ratingsData.length === 0) {
+    console.log('⭐ [Firestore] No ratings found for service:', serviceId);
+    return;
+  }
+  
+  // Calculate average rating
+  const averageRating = ratingsData.reduce((sum, rating) => sum + rating, 0) / ratingsData.length;
+  
+  console.log('⭐ [Firestore] Average rating:', averageRating.toFixed(2), 'from', ratingsData.length, 'reviews');
+  
+  // Update service with new rating
+  const serviceRef = doc(db, SERVICES_COLLECTION, serviceId);
+  await updateDoc(serviceRef, {
+    rating: parseFloat(averageRating.toFixed(2)),
+    updatedAt: Timestamp.now(),
+  });
+  
+  console.log('✅ [Firestore] Service rating updated successfully');
+}

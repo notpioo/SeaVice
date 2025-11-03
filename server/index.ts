@@ -120,29 +120,6 @@ app.use((req, res, next) => {
     }
   });
 
-  // Payment proof upload endpoint
-  app.post("/api/upload-payment-proof", upload.single("file"), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-
-      const orderId = req.body.orderId;
-      if (!orderId) {
-        return res.status(400).json({ message: "Order ID is required" });
-      }
-
-      const imageUrl = `/uploads/${req.file.filename}`;
-      // Assume uploadPaymentProof is a function from './storage' that handles saving the proof to the database associated with the orderId
-      // await uploadPaymentProof(orderId, imageUrl); // This function needs to be implemented in './storage'
-
-      res.json({ imageUrl, message: "Payment proof uploaded successfully" });
-    } catch (error: any) {
-      console.error("Payment proof upload error:", error);
-      res.status(500).json({ message: error.message || "Upload failed" });
-    }
-  });
-
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

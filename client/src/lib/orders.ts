@@ -1,19 +1,20 @@
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  getDocs, 
-  query, 
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  getDoc,
+  query,
   where,
   orderBy,
   Timestamp,
-  getDoc,
-  DocumentData,
-  onSnapshot
+  onSnapshot,
+  DocumentData
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { updateServiceRating } from "./services";
 import type { Order, InsertOrder, UpdateOrder, OrderStatus } from "@shared/schema";
 
 const ORDERS_COLLECTION = "orders";
@@ -34,6 +35,8 @@ function mapDocToOrder(id: string, data: DocumentData): Order {
     paymentProofUrl: data.paymentProofUrl,
     uploadAttempts: data.uploadAttempts || 0,
     notes: data.notes,
+    rating: data.rating, // Added rating field
+    review: data.review, // Added review field
     orderDate: data.orderDate?.toDate(),
     deliveryDate: data.deliveryDate?.toDate(),
     createdAt: data.createdAt?.toDate(),
@@ -44,10 +47,10 @@ function mapDocToOrder(id: string, data: DocumentData): Order {
 export async function createOrder(orderData: InsertOrder): Promise<Order> {
   try {
     console.log("📝 Creating order in Firestore:", orderData);
-    
+
     const now = new Date();
     const deliveryDate = orderData.deliveryDate ? new Date(orderData.deliveryDate) : null;
-    
+
     const firestoreData = {
       ...orderData,
       orderDate: Timestamp.fromDate(now),
@@ -55,32 +58,32 @@ export async function createOrder(orderData: InsertOrder): Promise<Order> {
       createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
     };
-    
+
     console.log("📤 Firestore data:", firestoreData);
-    
+
     const docRef = await addDoc(collection(db, ORDERS_COLLECTION), firestoreData);
     console.log("✅ Order document created with ID:", docRef.id);
 
     const newDoc = await getDoc(docRef);
     const data = newDoc.data();
-    
+
     if (!data) {
       console.error("❌ Failed to retrieve created order data");
       throw new Error("Gagal mengambil data pesanan yang baru dibuat");
     }
-    
+
     const order = mapDocToOrder(newDoc.id, data);
     console.log("✅ Order created successfully:", order);
-    
+
     return order;
   } catch (error: any) {
     console.error("❌ Error creating order:", error);
     console.error("Error details:", error.message, error.code);
-    
+
     if (error.code === 'permission-denied') {
       throw new Error("Anda tidak memiliki izin untuk membuat pesanan. Silakan login kembali.");
     }
-    
+
     throw new Error(error.message || "Gagal membuat pesanan. Silakan coba lagi.");
   }
 }
@@ -89,7 +92,7 @@ export async function getAllOrders(): Promise<Order[]> {
   try {
     const q = query(collection(db, ORDERS_COLLECTION), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map(doc => mapDocToOrder(doc.id, doc.data()));
   } catch (error) {
     console.error("Error getting orders:", error);
@@ -104,21 +107,21 @@ export function subscribeToAllOrders(
 ): () => void {
   try {
     console.log("📡 Setting up real-time listener for all orders");
-    
+
     const q = query(
       collection(db, ORDERS_COLLECTION),
       orderBy("createdAt", "desc")
     );
-    
+
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
         console.log("📩 Real-time update received for all orders, docs:", querySnapshot.size);
-        
+
         const orders = querySnapshot.docs.map(doc => {
           return mapDocToOrder(doc.id, doc.data());
         });
-        
+
         onUpdate(orders);
       },
       (error) => {
@@ -128,7 +131,7 @@ export function subscribeToAllOrders(
         }
       }
     );
-    
+
     return unsubscribe;
   } catch (error) {
     console.error("Error setting up real-time listener:", error);
@@ -140,17 +143,17 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
   try {
     console.log("getUserOrders called with userId:", userId); // Debug log
     const q = query(
-      collection(db, ORDERS_COLLECTION), 
+      collection(db, ORDERS_COLLECTION),
       where("userId", "==", userId)
     );
     const querySnapshot = await getDocs(q);
-    
+
     console.log("Query snapshot size:", querySnapshot.size); // Debug log
     const orders = querySnapshot.docs.map(doc => {
       console.log("Order doc:", doc.id, doc.data()); // Debug log
       return mapDocToOrder(doc.id, doc.data());
     });
-    
+
     // Sort by createdAt descending on client-side
     return orders.sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -171,28 +174,28 @@ export function subscribeToUserOrders(
 ): () => void {
   try {
     console.log("📡 Setting up real-time listener for userId:", userId);
-    
+
     const q = query(
       collection(db, ORDERS_COLLECTION),
       where("userId", "==", userId)
     );
-    
+
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
         console.log("📩 Real-time update received, docs:", querySnapshot.size);
-        
+
         const orders = querySnapshot.docs.map(doc => {
           return mapDocToOrder(doc.id, doc.data());
         });
-        
+
         // Sort by createdAt descending
         const sortedOrders = orders.sort((a, b) => {
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
         });
-        
+
         onUpdate(sortedOrders);
       },
       (error) => {
@@ -202,7 +205,7 @@ export function subscribeToUserOrders(
         }
       }
     );
-    
+
     return unsubscribe;
   } catch (error) {
     console.error("Error setting up real-time listener:", error);
@@ -214,11 +217,11 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
   try {
     const docRef = doc(db, ORDERS_COLLECTION, orderId);
     const docSnap = await getDoc(docRef);
-    
+
     if (!docSnap.exists()) {
       return null;
     }
-    
+
     return mapDocToOrder(docSnap.id, docSnap.data());
   } catch (error) {
     console.error("Error getting order:", error);
@@ -226,22 +229,29 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
   }
 }
 
-export async function updateOrder(orderId: string, updates: UpdateOrder): Promise<void> {
-  try {
-    const docRef = doc(db, ORDERS_COLLECTION, orderId);
-    const updateData: any = {
-      ...updates,
-      updatedAt: Timestamp.fromDate(new Date()),
-    };
-    
-    if (updates.deliveryDate) {
-      updateData.deliveryDate = Timestamp.fromDate(new Date(updates.deliveryDate));
+export async function updateOrder(
+  id: string,
+  data: UpdateOrder
+): Promise<void> {
+  const orderRef = doc(db, ORDERS_COLLECTION, id);
+  const updateData: any = {
+    ...data,
+    updatedAt: Timestamp.fromDate(new Date()),
+  };
+
+  if (data.deliveryDate) {
+    updateData.deliveryDate = Timestamp.fromDate(new Date(data.deliveryDate));
+  }
+
+  await updateDoc(orderRef, updateData);
+
+  // If rating is provided and order is completed, update service rating
+  if (data.rating && data.status === "completed") {
+    const orderDoc = await getDoc(orderRef);
+    const orderData = orderDoc.data();
+    if (orderData?.serviceId) {
+      await updateServiceRating(orderData.serviceId);
     }
-    
-    await updateDoc(docRef, updateData);
-  } catch (error) {
-    console.error("Error updating order:", error);
-    throw new Error("Gagal mengupdate pesanan");
   }
 }
 
@@ -263,7 +273,7 @@ export async function getOrdersByStatus(status: OrderStatus): Promise<Order[]> {
       orderBy("createdAt", "desc")
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map(doc => mapDocToOrder(doc.id, doc.data()));
   } catch (error) {
     console.error("Error getting orders by status:", error);
@@ -275,14 +285,14 @@ export async function updateOrderPaymentProof(orderId: string, paymentProofUrl: 
   try {
     const docRef = doc(db, ORDERS_COLLECTION, orderId);
     const docSnap = await getDoc(docRef);
-    
+
     if (!docSnap.exists()) {
       throw new Error("Pesanan tidak ditemukan");
     }
-    
+
     const currentAttempts = docSnap.data().uploadAttempts || 0;
     const newAttempts = currentAttempts + 1;
-    
+
     // Check if attempts exceed limit
     if (newAttempts > 5) {
       await updateDoc(docRef, {
@@ -293,7 +303,7 @@ export async function updateOrderPaymentProof(orderId: string, paymentProofUrl: 
       });
       throw new Error("Pesanan dibatalkan karena melebihi batas maksimal 5x upload bukti pembayaran");
     }
-    
+
     await updateDoc(docRef, {
       paymentProofUrl,
       paymentStatus: "waiting_confirmation",

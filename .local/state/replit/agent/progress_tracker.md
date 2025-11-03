@@ -279,3 +279,77 @@ The SeaVice project has been successfully migrated to the Replit environment. Al
 2. Start building and customizing the application
 3. Test push notifications after adding Firebase credentials
 4. Deploy to production using Replit's publish feature when ready
+
+---
+
+## Upload Bukti Pembayaran - Flow Consolidation (November 2, 2025)
+
+### Final Solution Implemented
+[x] 1. Restored upload functionality to OrderConfirmation.tsx (the better-designed page)
+[x] 2. Updated all navigation links to use `/pesanan/:orderId` instead of `/payment/:orderId`
+[x] 3. Payment.tsx is now deprecated/unused
+[x] 4. Single source of truth for payment flow - OrderConfirmation.tsx
+
+### Root Cause Analysis
+❌ **Original Issue**: Upload endpoint field name mismatch (`upload.single("image")` vs FormData "file")
+❌ **Secondary Issue**: Duplicate upload endpoints caused route collision
+❌ **UX Confusion**: Two similar pages (OrderConfirmation vs Payment) with same functionality
+
+### Final Architecture
+✅ **OrderConfirmation.tsx** (`/pesanan/:orderId`) - Main payment page with:
+  - Breadcrumb navigation (Home → Riwayat Pesanan → Detail Pesanan)
+  - 4-step progress indicator (Pesan → Bayar → Konfirmasi → Selesai)
+  - 24-hour countdown timer for payment deadline
+  - Payment instructions (Bank Transfer + QRIS)
+  - Embedded upload form (no redirect needed)
+  - Works for both "waiting_payment" and "rejected" statuses
+  - Single-page experience for better UX
+
+✅ **Orders.tsx** - All buttons redirect to OrderConfirmation:
+  - "Bayar Sekarang" → `/pesanan/:orderId`
+  - "Upload Bukti Baru" → `/pesanan/:orderId`
+  - "Lihat Detail" → `/pesanan/:orderId`
+
+✅ **Payment.tsx** - Deprecated (unused/legacy)
+
+### Technical Fixes
+✅ **server/routes.ts**: Uses `upload.single("file")` to match client FormData
+✅ **server/index.ts**: No duplicate endpoint
+✅ **Upload mutation**: Properly refetches order data to update uploadAttempts counter
+✅ **File validation**: Max 5MB, image types only, 5 upload attempts limit
+
+### Benefits
+✨ Users stay on one page throughout payment process
+✨ No confusion with multiple similar pages
+✨ Better UX with all info and actions in one place
+✨ Easier to maintain with consolidated code
+✨ Cleaner architecture with single source of truth
+
+### Architect Review Status
+✅ **PASSED** - All changes verified by architect
+- Upload mutation correctly recreates intended workflow
+- File handling guards work properly (image type, ≤5MB, 5-attempt limit)
+- Navigation correctly points all entry points to /pesanan/:id
+- No regressions in data fetching or routing
+- Recommendation: Remove obsolete Payment.tsx file in future cleanup
+
+---
+
+## ✅ FINAL CONFIRMATION - November 2, 2025
+
+### All Migration Tasks Completed Successfully
+[x] 1. Install the required packages - ✅ DONE
+[x] 2. Restart the workflow to see if the project is working - ✅ DONE
+[x] 3. Verify the project is working using the screenshot tool - ✅ DONE
+[x] 4. Inform user the import is completed and mark as completed - ✅ DONE
+
+### Current Workflow Status (November 2, 2025 7:20 AM)
+✅ **Workflow Name**: Start application
+✅ **Status**: RUNNING
+✅ **Command**: npm run dev
+✅ **Port**: 5000 (webview output type)
+✅ **Server**: Express serving successfully on port 5000
+
+### Migration Status: COMPLETE ✅
+All items in the progress tracker have been marked as completed with [x].
+The project is fully functional and ready for development and deployment.
