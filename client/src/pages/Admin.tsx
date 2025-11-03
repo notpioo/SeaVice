@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AdminVouchers from "./AdminVouchers";
 import AdminOrders from "./AdminOrders";
 import AdminNotifications from "./AdminNotifications";
+import AdminAnnouncements from "./AdminAnnouncements";
 
 export default function Admin() {
   const { toast } = useToast();
@@ -219,6 +220,10 @@ export default function Admin() {
               <TabsTrigger value="orders" data-testid="tab-orders" className="flex-shrink-0 text-xs md:text-sm">
                 <Package className="h-4 w-4 mr-1 md:mr-2" />
                 <span className="hidden xs:inline">Pesanan</span>
+              </TabsTrigger>
+              <TabsTrigger value="announcements" data-testid="tab-announcements" className="flex-shrink-0 text-xs md:text-sm">
+                <Bell className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden xs:inline">Pengumuman</span>
               </TabsTrigger>
               <TabsTrigger value="vouchers" data-testid="tab-vouchers" className="flex-shrink-0 text-xs md:text-sm">
                 <Ticket className="h-4 w-4 mr-1 md:mr-2" />
@@ -591,6 +596,10 @@ export default function Admin() {
 
           <TabsContent value="orders">
             <AdminOrders />
+          </TabsContent>
+
+          <TabsContent value="announcements">
+            <AdminAnnouncements />
           </TabsContent>
 
           <TabsContent value="vouchers">

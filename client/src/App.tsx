@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
 import Landing from "./pages/Landing";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Services from "./pages/Services";
@@ -97,6 +98,11 @@ function AppContent() {
       <main className="flex-grow pt-16 md:pt-20">
         <Switch>
           <Route path="/" component={Landing} />
+          <Route path="/beranda">
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          </Route>
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route path="/services" component={Services} />

@@ -7,15 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { registerWithEmail, signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const registerSchema = z.object({
   displayName: z.string().min(2, "Nama harus minimal 2 karakter"),
   email: z.string().email("Email tidak valid"),
+  phone: z.string().min(10, "Nomor WhatsApp minimal 10 digit").regex(/^(\+62|62|0)[0-9]{9,12}$/, "Format nomor WhatsApp tidak valid (contoh: 081234567890)"),
   password: z.string().min(6, "Password minimal 6 karakter"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -30,12 +35,17 @@ export default function Register() {
   const { toast } = useToast();
   const { setUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [tempUser, setTempUser] = useState<any>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       displayName: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
     },
@@ -44,7 +54,7 @@ export default function Register() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const user = await registerWithEmail(data.email, data.password, data.displayName);
+      const user = await registerWithEmail(data.email, data.password, data.displayName, data.phone);
       setUser(user);
 
       toast({
@@ -70,21 +80,68 @@ export default function Register() {
     setIsLoading(true);
     try {
       const user = await signInWithGoogle();
-      setUser(user);
+      
+      // Check if user already has phone number
+      if (!user.phone) {
+        setTempUser(user);
+        setShowPhoneDialog(true);
+        setIsLoading(false);
+      } else {
+        setUser(user);
+        toast({
+          title: "Registrasi berhasil!",
+          description: `Selamat datang, ${user.displayName}`,
+        });
+
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 500);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Registrasi gagal",
+        description: error.message || "Terjadi kesalahan saat registrasi dengan Google",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async () => {
+    // Validate phone number
+    const phoneRegex = /^(\+62|62|0)[0-9]{9,12}$/;
+    if (!phoneNumber || phoneNumber.length < 10) {
+      setPhoneError("Nomor WhatsApp minimal 10 digit");
+      return;
+    }
+    if (!phoneRegex.test(phoneNumber)) {
+      setPhoneError("Format nomor WhatsApp tidak valid (contoh: 081234567890)");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Update user document with phone number
+      await updateDoc(doc(db, "users", tempUser.id), {
+        phone: phoneNumber,
+      });
+
+      const updatedUser = { ...tempUser, phone: phoneNumber };
+      setUser(updatedUser);
 
       toast({
         title: "Registrasi berhasil!",
-        description: `Selamat datang, ${user.displayName}`,
+        description: `Selamat datang, ${updatedUser.displayName}`,
       });
 
-      // Use window.location for more reliable redirect
+      setShowPhoneDialog(false);
       setTimeout(() => {
         window.location.href = "/";
       }, 500);
     } catch (error: any) {
       toast({
-        title: "Registrasi gagal",
-        description: error.message || "Terjadi kesalahan saat registrasi dengan Google",
+        title: "Gagal menyimpan nomor WhatsApp",
+        description: error.message || "Terjadi kesalahan",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -144,6 +201,26 @@ export default function Register() {
                           {...field}
                           disabled={isLoading}
                           data-testid="input-email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nomor WhatsApp</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="081234567890"
+                          {...field}
+                          disabled={isLoading}
+                          data-testid="input-phone"
                         />
                       </FormControl>
                       <FormMessage />
@@ -240,6 +317,55 @@ export default function Register() {
             </p>
           </CardFooter>
         </Card>
+
+        {/* Phone Number Dialog for Google Sign-in */}
+        <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Lengkapi Data Anda</DialogTitle>
+              <DialogDescription>
+                Masukkan nomor WhatsApp untuk melanjutkan pendaftaran
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label htmlFor="phone" className="text-sm font-medium">
+                  Nomor WhatsApp
+                </label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="081234567890"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    setPhoneNumber(e.target.value);
+                    setPhoneError("");
+                  }}
+                  disabled={isLoading}
+                />
+                {phoneError && (
+                  <p className="text-sm text-destructive">{phoneError}</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={handlePhoneSubmit}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  "Lanjutkan"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

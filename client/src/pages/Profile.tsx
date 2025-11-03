@@ -1,37 +1,138 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { updateProfile, updatePassword } from "firebase/auth";
+import { updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { updateUserProfile } from "@/lib/users";
+import { getUserOrderStats } from "@/lib/orders";
+import { useQuery } from "@tanstack/react-query";
 import {
-  User,
-  Mail,
-  Shield,
-  Calendar,
-  Lock,
   Loader2,
   Camera,
+  Phone,
+  MapPin,
+  Mail,
+  User,
+  Edit2,
+  Save,
+  X,
+  ChevronRight,
+  ShoppingBag,
+  Package,
+  Truck,
+  Star,
+  Wallet,
+  Coins,
+  Ticket,
+  CreditCard,
+  Shield,
+  MessageCircle,
+  HelpCircle,
+  Settings,
+  Tag,
 } from "lucide-react";
 
 export default function Profile() {
   const { user, setUser } = useAuth();
   const { toast } = useToast();
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [displayName, setDisplayName] = useState(user?.displayName || "");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleUpdateName = async () => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [address, setAddress] = useState(user?.address || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  // Fetch order stats
+  const { data: orderStats } = useQuery({
+    queryKey: ["orderStats", user?.id],
+    queryFn: () => user?.id ? getUserOrderStats(user.id) : null,
+    enabled: !!user?.id,
+  });
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || "");
+      setPhone(user.phone || "");
+      setAddress(user.address || "");
+    }
+  }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !auth.currentUser) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Error",
+        description: "File harus berupa gambar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Ukuran file maksimal 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const response = await fetch("/api/upload-avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const { imageUrl } = await response.json();
+
+      await updateProfile(auth.currentUser, {
+        photoURL: imageUrl,
+      });
+
+      await updateUserProfile(user.id, {
+        photoURL: imageUrl,
+      });
+
+      setUser({
+        ...user,
+        photoURL: imageUrl,
+      });
+
+      toast({
+        title: "Berhasil",
+        description: "Foto profil berhasil diperbarui",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Gagal mengupload foto",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
     if (!user || !auth.currentUser) return;
     if (displayName.trim().length < 2) {
       toast({
@@ -48,20 +149,28 @@ export default function Profile() {
         displayName: displayName.trim(),
       });
 
+      await updateUserProfile(user.id, {
+        displayName: displayName.trim(),
+        phone: phone.trim() || undefined,
+        address: address.trim() || undefined,
+      });
+
       setUser({
         ...user,
         displayName: displayName.trim(),
+        phone: phone.trim() || undefined,
+        address: address.trim() || undefined,
       });
 
       toast({
         title: "Berhasil",
-        description: "Nama berhasil diperbarui",
+        description: "Profil berhasil diperbarui",
       });
-      setIsEditingName(false);
+      setIsEditing(false);
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Gagal memperbarui nama",
+        description: error.message || "Gagal memperbarui profil",
         variant: "destructive",
       });
     } finally {
@@ -69,256 +178,243 @@ export default function Profile() {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!auth.currentUser) return;
-    
-    if (newPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password minimal 6 karakter",
-        variant: "destructive",
-      });
-      return;
+  const handleCancel = () => {
+    if (user) {
+      setDisplayName(user.displayName || "");
+      setPhone(user.phone || "");
+      setAddress(user.address || "");
     }
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Password tidak cocok",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await updatePassword(auth.currentUser, newPassword);
-      
-      toast({
-        title: "Berhasil",
-        description: "Password berhasil diubah",
-      });
-      
-      setNewPassword("");
-      setConfirmPassword("");
-      setIsChangingPassword(false);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Gagal mengubah password. Anda mungkin perlu login ulang.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    setIsEditing(false);
   };
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground">Silakan login terlebih dahulu</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Profile Saya</h1>
-          <p className="text-muted-foreground">
-            Kelola informasi akun Anda
-          </p>
-        </div>
-
-        {/* Profile Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="relative group">
-                <Avatar className="h-24 w-24 md:h-32 md:w-32">
-                  <AvatarImage src={user.photoURL} alt={user.displayName} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-3xl md:text-4xl">
-                    {user.displayName.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <button className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                  <Camera className="h-6 w-6 text-white" />
-                </button>
-              </div>
-              <div className="text-center md:text-left flex-1">
-                <CardTitle className="text-2xl mb-2">{user.displayName}</CardTitle>
-                <CardDescription className="flex flex-col gap-1">
-                  <span className="flex items-center gap-2 justify-center md:justify-start">
-                    <Mail className="h-4 w-4" />
-                    {user.email}
-                  </span>
-                  <span className="flex items-center gap-2 justify-center md:justify-start">
-                    <Shield className="h-4 w-4" />
-                    Role: <Badge variant="secondary" className="capitalize">{user.role}</Badge>
-                  </span>
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Account Information */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Informasi Akun
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Display Name */}
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Nama Lengkap</Label>
-              {isEditingName ? (
-                <div className="flex gap-2">
-                  <Input
-                    id="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    disabled={isLoading}
-                  />
-                  <Button
-                    onClick={handleUpdateName}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Simpan"
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditingName(false);
-                      setDisplayName(user.displayName);
-                    }}
-                    disabled={isLoading}
-                  >
-                    Batal
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span>{user.displayName}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditingName(true)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              )}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Header dengan Avatar - Shopee Style */}
+      <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="flex items-center gap-4">
+            {/* Avatar dengan Upload */}
+            <div className="relative group">
+              <Avatar className="h-16 w-16 ring-2 ring-background shadow-lg">
+                <AvatarImage src={user.photoURL} alt={user.displayName || user.email} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                  {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <label
+                htmlFor="avatar-upload"
+                className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded-full cursor-pointer"
+                data-testid="button-upload-avatar"
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-5 w-5 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-5 w-5 text-white" />
+                )}
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+                disabled={isUploadingAvatar}
+                data-testid="input-avatar"
+              />
             </div>
 
-            <Separator />
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <div className="p-3 bg-muted rounded-lg">
-                <span className="text-muted-foreground">{user.email}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Email tidak dapat diubah
-              </p>
-            </div>
-
-            <Separator />
-
-            {/* Role */}
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <div className="p-3 bg-muted rounded-lg">
-                <Badge variant="secondary" className="capitalize">
-                  {user.role}
+            {/* User Info */}
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-foreground" data-testid="text-username">
+                {user.displayName || user.email || "Pengguna"}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className="text-xs" data-testid="text-role">
+                  {user.role === "admin" ? "Admin" : "User"}
                 </Badge>
+                {(user.loyaltyPoints || 0) > 0 && (
+                  <Badge variant="default" className="text-xs" data-testid="text-loyalty-points">
+                    {user.loyaltyPoints} Poin
+                  </Badge>
+                )}
               </div>
+            </div>
+
+            <Link href="/profile/edit">
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+        {/* Card Pesanan Saya */}
+        <Card className="overflow-hidden shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold">Pesanan Saya</h2>
+              <Link href="/pesanan">
+                <Button variant="ghost" size="sm" className="text-primary">
+                  Lihat Riwayat Pesanan
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {/* Belum Bayar */}
+              <Link href="/pesanan?status=pending">
+                <button className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="relative">
+                    <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+                    {orderStats && orderStats.pendingOrders > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                        {orderStats.pendingOrders}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-center">Belum Bayar</span>
+                </button>
+              </Link>
+
+              {/* Dikerjakan */}
+              <Link href="/pesanan?status=processing">
+                <button className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="relative">
+                    <Package className="h-6 w-6 text-muted-foreground" />
+                    {orderStats && orderStats.processingOrders > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-white text-xs rounded-full flex items-center justify-center">
+                        {orderStats.processingOrders}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-center">Dikerjakan</span>
+                </button>
+              </Link>
+
+              {/* Selesai */}
+              <Link href="/pesanan?status=completed">
+                <button className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="relative">
+                    <Star className="h-6 w-6 text-muted-foreground" />
+                    {orderStats && orderStats.completedOrders > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center">
+                        {orderStats.completedOrders}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-center">Selesai</span>
+                </button>
+              </Link>
+
+              {/* Beri Penilaian */}
+              <Link href="/pesanan?status=completed">
+                <button className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <Star className="h-6 w-6 text-yellow-500" />
+                  <span className="text-xs text-center">Beri Penilaian</span>
+                </button>
+              </Link>
             </div>
           </CardContent>
         </Card>
 
-        {/* Security Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Keamanan
-            </CardTitle>
-            <CardDescription>
-              Kelola password dan keamanan akun Anda
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!isChangingPassword ? (
-              <Button
-                variant="outline"
-                onClick={() => setIsChangingPassword(true)}
-              >
-                Ubah Password
+        {/* Card Keuangan */}
+        <Card className="overflow-hidden shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold">Keuangan</h2>
+              <Button variant="ghost" size="sm" className="text-primary">
+                Lihat Semua
+                <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">Password Baru</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Minimal 6 karakter"
-                    disabled={isLoading}
-                  />
-                </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Ketik ulang password baru"
-                    disabled={isLoading}
-                  />
-                </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {/* SeaLdo */}
+                <button className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                  <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <Wallet className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">SeaLdo</p>
+                    <p className="font-semibold text-sm">Rp 0</p>
+                  </div>
+                </button>
 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleChangePassword}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Menyimpan...
-                      </>
-                    ) : (
-                      "Simpan Password"
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsChangingPassword(false);
-                      setNewPassword("");
-                      setConfirmPassword("");
-                    }}
-                    disabled={isLoading}
-                  >
-                    Batal
-                  </Button>
-                </div>
+                {/* Poin Saya */}
+                <button className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                    <Coins className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Poin Saya</p>
+                    <p className="font-semibold text-sm">{user.loyaltyPoints || 0}</p>
+                  </div>
+                </button>
               </div>
-            )}
+
+              {/* Voucher - Full Width */}
+              <Link href="/layanan" className="block w-full">
+                <button className="w-full flex items-center justify-between gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                      <Ticket className="h-5 w-5 text-red-500" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs text-muted-foreground">Lihat Voucher</p>
+                      <p className="font-semibold text-sm">Voucher Tersedia</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card Bantuan */}
+        <Card className="overflow-hidden shadow-sm">
+          <CardContent className="p-0">
+            <div className="divide-y divide-border">
+              <a
+                href="https://wa.me/6281234567890"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
+              >
+                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <MessageCircle className="h-5 w-5 text-green-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Chat dengan Kami</p>
+                  <p className="text-sm text-muted-foreground">Butuh bantuan? Hubungi CS</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </a>
+
+              <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
+                <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <HelpCircle className="h-5 w-5 text-blue-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-medium">Pusat Bantuan</p>
+                  <p className="text-sm text-muted-foreground">FAQ & Panduan</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>

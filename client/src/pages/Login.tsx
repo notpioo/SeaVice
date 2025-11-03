@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,10 @@ import { signInWithEmail, signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const loginSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -25,6 +29,10 @@ export default function Login() {
   const { toast } = useToast();
   const { setUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [tempUser, setTempUser] = useState<any>(null); // Temporary storage for user data from Google sign-in
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -70,6 +78,14 @@ export default function Login() {
       const user = await signInWithGoogle();
       setUser(user);
 
+      if (!user.phone) {
+        // If user doesn't have a phone number, prompt them to enter it
+        setTempUser(user); // Store user data temporarily
+        setShowPhoneDialog(true);
+        setIsLoading(false); // Stop loading indicator as we are showing a dialog
+        return; // Exit the function here to prevent immediate redirect
+      }
+
       toast({
         title: "Login berhasil!",
         description: `Selamat datang, ${user.displayName}`,
@@ -87,6 +103,51 @@ export default function Login() {
       toast({
         title: "Login gagal",
         description: error.message || "Terjadi kesalahan saat login dengan Google",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async () => {
+    // Validate phone number
+    const phoneRegex = /^(\+62|62|0)[0-9]{9,12}$/;
+    if (!phoneNumber || phoneNumber.length < 10) {
+      setPhoneError("Nomor WhatsApp minimal 10 digit");
+      return;
+    }
+    if (!phoneRegex.test(phoneNumber)) {
+      setPhoneError("Format nomor WhatsApp tidak valid (contoh: 081234567890)");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Update user document with phone number
+      await updateDoc(doc(db, "users", tempUser.id), {
+        phone: phoneNumber,
+      });
+
+      const updatedUser = { ...tempUser, phone: phoneNumber };
+      setUser(updatedUser);
+
+      toast({
+        title: "Login berhasil!",
+        description: `Selamat datang, ${updatedUser.displayName}`,
+      });
+
+      setShowPhoneDialog(false);
+      setTimeout(() => {
+        if (updatedUser.role === "admin") {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/";
+        }
+      }, 500);
+    } catch (error: any) {
+      toast({
+        title: "Gagal menyimpan nomor WhatsApp",
+        description: error.message || "Terjadi kesalahan",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -204,6 +265,50 @@ export default function Login() {
           </CardFooter>
         </Card>
       </div>
+
+      {/* Dialog for entering phone number after Google sign-in */}
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Lengkapi Profil Anda</DialogTitle>
+            <DialogDescription>
+              Mohon masukkan nomor WhatsApp Anda untuk melanjutkan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phoneNumber" className="text-right">
+                Nomor WhatsApp
+              </Label>
+              <Input
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => {
+                  setPhoneNumber(e.target.value);
+                  setPhoneError(""); // Clear error on input change
+                }}
+                className="col-span-3"
+                placeholder="+6281234567890"
+                disabled={isLoading}
+                data-testid="input-phone-number"
+              />
+            </div>
+            {phoneError && <p className="text-red-500 text-sm col-span-4 -mt-2" data-testid="phone-error">{phoneError}</p>}
+          </div>
+          <DialogFooter>
+            <Button onClick={handlePhoneSubmit} disabled={isLoading} data-testid="button-submit-phone">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                "Simpan & Lanjutkan"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

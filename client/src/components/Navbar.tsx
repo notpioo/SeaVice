@@ -34,12 +34,14 @@ export function Navbar({ className = "" }: { className?: string }) {
 
   const navLinks = user?.role === "admin"
     ? [
+        { href: "/beranda", label: "Beranda", icon: LayoutDashboard },
         { href: "/admin", label: "Admin Panel", icon: LayoutDashboard },
         { href: "/layanan", label: "Layanan", icon: Briefcase },
         { href: "/pesanan", label: "Pesanan Saya", icon: ShoppingBag },
       ]
     : user
     ? [
+        { href: "/beranda", label: "Beranda", icon: LayoutDashboard },
         { href: "/layanan", label: "Layanan", icon: Briefcase },
         { href: "/pesanan", label: "Pesanan Saya", icon: ShoppingBag },
       ]

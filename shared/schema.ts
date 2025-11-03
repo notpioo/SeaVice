@@ -4,12 +4,24 @@ import { z } from "zod";
 export const userRoleSchema = z.enum(["user", "admin"]);
 export type UserRole = z.infer<typeof userRoleSchema>;
 
+export const notificationPreferencesSchema = z.object({
+  orderUpdates: z.boolean().default(true),
+  newOrders: z.boolean().default(true),
+  marketing: z.boolean().default(false),
+});
+
+export type NotificationPreferences = z.infer<typeof notificationPreferencesSchema>;
+
 export interface User {
   id: string;
   email: string;
   displayName: string;
   role: UserRole;
   photoURL?: string;
+  phone?: string;
+  address?: string;
+  notificationPreferences?: NotificationPreferences;
+  loyaltyPoints?: number;
   createdAt: Date;
 }
 
@@ -18,9 +30,24 @@ export const insertUserSchema = z.object({
   displayName: z.string().min(2, "Nama harus minimal 2 karakter"),
   role: userRoleSchema.default("user"),
   photoURL: z.string().optional(),
+  phone: z.string().min(10, "Nomor WhatsApp minimal 10 digit").regex(/^(\+62|62|0)[0-9]{9,12}$/, "Format nomor WhatsApp tidak valid"),
+  address: z.string().optional(),
+  notificationPreferences: notificationPreferencesSchema.optional(),
+  loyaltyPoints: z.number().min(0).default(0),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export const updateUserSchema = z.object({
+  displayName: z.string().min(2, "Nama harus minimal 2 karakter").optional(),
+  photoURL: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  notificationPreferences: notificationPreferencesSchema.optional(),
+  loyaltyPoints: z.number().min(0).optional(),
+});
+
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 
 // Service schema for digital services
 export interface Service {
@@ -221,3 +248,23 @@ export const insertNotificationSchema = selectNotificationSchema.omit({
   clickedCount: true,
 });
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Announcement Schema
+export const announcementSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, "Judul harus diisi"),
+  description: z.string().min(1, "Deskripsi harus diisi"),
+  type: z.enum(["info", "promo", "new"]),
+  date: z.string(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const insertAnnouncementSchema = announcementSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Announcement = z.infer<typeof announcementSchema>;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;

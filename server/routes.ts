@@ -119,6 +119,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload avatar to Cloudinary
+  app.post("/api/upload-avatar", upload.single("avatar"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).send({ message: "No file uploaded" });
+      }
+
+      // Upload to Cloudinary
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'avatars',
+          resource_type: 'image',
+          transformation: [
+            { width: 500, height: 500, crop: 'fill', gravity: 'face' },
+            { quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) {
+            console.error("Cloudinary upload error:", error);
+            return res.status(500).send({ message: "Failed to upload avatar" });
+          }
+
+          // Return Cloudinary URL
+          res.json({ imageUrl: result?.secure_url });
+        }
+      );
+
+      // Stream buffer to Cloudinary
+      uploadStream.end(req.file.buffer);
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      res.status(500).send({ message: error.message });
+    }
+  });
+
   app.use(router);
 
   const httpServer = createServer(app);

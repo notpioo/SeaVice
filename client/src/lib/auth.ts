@@ -19,6 +19,7 @@ export async function registerWithEmail(
   email: string,
   password: string,
   displayName: string,
+  phone: string,
   role: UserRole = "user"
 ): Promise<User> {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -28,6 +29,7 @@ export async function registerWithEmail(
     id: firebaseUser.uid,
     email: firebaseUser.email!,
     displayName,
+    phone,
     role,
     createdAt: new Date(),
   };

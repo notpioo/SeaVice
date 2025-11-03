@@ -317,3 +317,81 @@ export async function updateOrderPaymentProof(orderId: string, paymentProofUrl: 
     throw error;
   }
 }
+
+export interface UserOrderStats {
+  totalOrders: number;
+  totalSpent: number;
+  completedOrders: number;
+  pendingOrders: number;
+  processingOrders: number;
+  cancelledOrders: number;
+  recentOrders: Order[];
+}
+
+export async function getUserOrderStats(userId: string): Promise<UserOrderStats> {
+  try {
+    const orders = await getUserOrders(userId);
+
+    const totalSpent = orders
+      .filter(o => o.status === "completed")
+      .reduce((sum, o) => sum + o.finalPrice, 0);
+
+    return {
+      totalOrders: orders.length,
+      totalSpent,
+      completedOrders: orders.filter(o => o.status === "completed").length,
+      pendingOrders: orders.filter(o => o.status === "pending").length,
+      processingOrders: orders.filter(o => o.status === "processing").length,
+      cancelledOrders: orders.filter(o => o.status === "cancelled").length,
+      recentOrders: orders.slice(0, 5),
+    };
+  } catch (error) {
+    console.error("Error getting user order stats:", error);
+    throw error;
+  }
+}
+
+export interface AdminOrderStats {
+  totalOrders: number;
+  totalRevenue: number;
+  pendingOrders: number;
+  processingOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  waitingPayment: number;
+  waitingConfirmation: number;
+  recentOrders: Order[];
+}
+
+export async function getAdminOrderStats(): Promise<AdminOrderStats> {
+  try {
+    const orders = await getAllOrders();
+
+    const totalRevenue = orders
+      .filter(o => o.status === "completed")
+      .reduce((sum, o) => sum + o.finalPrice, 0);
+
+    const waitingPayment = orders.filter(
+      o => o.paymentStatus === "waiting_payment"
+    ).length;
+
+    const waitingConfirmation = orders.filter(
+      o => o.paymentStatus === "waiting_confirmation"
+    ).length;
+
+    return {
+      totalOrders: orders.length,
+      totalRevenue,
+      pendingOrders: orders.filter(o => o.status === "pending").length,
+      processingOrders: orders.filter(o => o.status === "processing").length,
+      completedOrders: orders.filter(o => o.status === "completed").length,
+      cancelledOrders: orders.filter(o => o.status === "cancelled").length,
+      waitingPayment,
+      waitingConfirmation,
+      recentOrders: orders.slice(0, 10),
+    };
+  } catch (error) {
+    console.error("Error getting admin order stats:", error);
+    throw error;
+  }
+}

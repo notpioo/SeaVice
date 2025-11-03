@@ -252,16 +252,25 @@ Untuk membuat user dengan role admin:
     * Upload forms embedded directly in the page for both "waiting_payment" and "rejected" statuses
     * No more redirect to separate payment page - all actions in one place
     * Better UX with countdown timer, payment instructions, and upload form on same page
-  - **Navigation Flow Updates**:
-    * "Bayar Sekarang" button in Orders.tsx → `/pesanan/:orderId` (OrderConfirmation)
-    * "Upload Bukti Baru" button in Orders.tsx → `/pesanan/:orderId` (OrderConfirmation)
-    * "Lihat Detail" button in Orders.tsx → `/pesanan/:orderId` (OrderConfirmation)
-  - **Payment.tsx Deprecated**:
-    * Payment.tsx (`/payment/:orderId`) is now unused/legacy
-    * All upload functionality consolidated in OrderConfirmation.tsx
-    * Cleaner architecture with single source of truth for payment flow
-  - **Benefits**:
-    * Users stay on one page throughout payment process
-    * Less confusion with multiple similar pages
-    * Better UX with breadcrumb, progress indicator, and embedded upload
-    * Easier to maintain with consolidated code
+
+### November 3, 2025
+- **Profile Page Redesign - Shopee Style**:
+  - **Removed complexity, improved UX**:
+    * Removed tab navigation (Profile, Security, Notifications, Statistics)
+    * Removed Security section (password change functionality)
+    * Removed Notifications section (notification preferences)
+    * Removed Statistics section (order stats, recent orders)
+    * Simplified to single clean card with just essential profile info
+  - **New Clean Design**:
+    * Shopee-inspired vertical layout with gradient header
+    * Large avatar with hover upload (500x500 face-crop)
+    * Simple profile edit form (name, phone, address)
+    * Better spacing, typography, and visual hierarchy
+    * Improved mobile and desktop responsive design
+  - **Technical Improvements**:
+    * Null-safe avatar fallback (uses email or "U" if displayName is null)
+    * All displayName references safely guarded against null/undefined
+    * Controlled input safety (prevents controlled/uncontrolled warnings)
+    * Preserved avatar upload and profile edit functionality
+    * Clean gradient backgrounds with ring-4 avatar border
+    * Better empty states ("Belum diisi" for optional fields)
