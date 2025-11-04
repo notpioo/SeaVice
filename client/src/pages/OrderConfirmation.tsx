@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  CheckCircle2, 
-  Clock, 
+import {
+  CheckCircle2,
+  Clock,
   Package,
   ArrowRight,
   Calendar,
@@ -37,7 +37,6 @@ export default function OrderConfirmation() {
   const [, params] = useRoute("/pesanan/:orderId");
   const orderId = params?.orderId;
   const { toast } = useToast();
-  const [copiedField, setCopiedField] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
@@ -73,7 +72,7 @@ export default function OrderConfirmation() {
     onSuccess: async () => {
       setSelectedFile(null);
       setPreviewUrl("");
-      
+
       await queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       await queryClient.invalidateQueries({ queryKey: ["orders"] });
       await queryClient.refetchQueries({ queryKey: ["order", orderId] });
@@ -120,8 +119,8 @@ export default function OrderConfirmation() {
       if (!rating || rating < 1) {
         throw new Error("Silakan berikan rating terlebih dahulu");
       }
-      await updateOrder(orderId!, { 
-        rating, 
+      await updateOrder(orderId!, {
+        rating,
         review: review.trim() || undefined
       });
     },
@@ -189,12 +188,10 @@ export default function OrderConfirmation() {
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedField(field);
     toast({
       title: "Disalin!",
       description: `${field} telah disalin ke clipboard`,
     });
-    setTimeout(() => setCopiedField(""), 2000);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -383,7 +380,7 @@ export default function OrderConfirmation() {
                     {label}
                   </p>
                 </div>
-                
+
                 {/* Connecting Line */}
                 {index < 3 && (
                   <div
@@ -483,7 +480,7 @@ export default function OrderConfirmation() {
                         Rp {order.originalPrice.toLocaleString('id-ID')}
                       </span>
                     </div>
-                    
+
                     {order.voucherCode && order.discountAmount && order.discountAmount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                         <span className="flex items-center gap-1">
@@ -495,7 +492,7 @@ export default function OrderConfirmation() {
                         </span>
                       </div>
                     )}
-                    
+
                     <div className="flex justify-between font-bold text-lg pt-2 border-t">
                       <span>Total Bayar</span>
                       <span className="text-primary" data-testid="text-final-price">
@@ -555,72 +552,21 @@ export default function OrderConfirmation() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Bank Transfer */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Building2 className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold">Transfer Bank</h3>
-                    </div>
-                    <div className="p-4 rounded-lg bg-muted/50 space-y-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Nama Bank</p>
-                        <p className="font-medium">Bank BCA</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Nomor Rekening</p>
-                        <div className="flex items-center gap-2">
-                          <p className="font-mono font-medium">1234567890</p>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => copyToClipboard("1234567890", "Nomor Rekening")}
-                          >
-                            {copiedField === "Nomor Rekening" ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Atas Nama</p>
-                        <p className="font-medium">PT SeaVice Indonesia</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Jumlah Transfer</p>
-                        <div className="flex items-center gap-2">
-                          <p className="font-mono font-bold text-lg text-primary">
-                            Rp {order.finalPrice.toLocaleString('id-ID')}
-                          </p>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => copyToClipboard(order.finalPrice.toString(), "Jumlah")}
-                          >
-                            {copiedField === "Jumlah" ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* QRIS */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <QrCode className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold">Atau Scan QRIS</h3>
+                      <h3 className="font-semibold">Scan QRIS</h3>
                     </div>
                     <div className="p-4 rounded-lg bg-muted/50 flex flex-col items-center">
                       <div className="bg-white p-4 rounded-lg mb-2">
                         <img
-                          src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SeaVice-Payment-Demo"
+                          src="/qris-payment.png"
                           alt="QRIS Code"
-                          className="w-48 h-48"
+                          className="w-48 h-48 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SeaVice-Payment-Demo";
+                          }}
                         />
                       </div>
                       <p className="text-sm text-muted-foreground text-center">
@@ -631,7 +577,7 @@ export default function OrderConfirmation() {
 
                   <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
                     <p className="text-sm text-blue-900 dark:text-blue-100">
-                      <strong>Penting:</strong> Setelah transfer, jangan lupa upload bukti pembayaran di sebelah kanan
+                      <strong>Penting:</strong> Setelah pembayaran, silakan upload bukti pembayaran di sebelah kanan.
                     </p>
                   </div>
                 </CardContent>
@@ -733,8 +679,8 @@ export default function OrderConfirmation() {
                       <p className="text-sm font-medium text-green-900 dark:text-green-100 mb-3 text-center">
                         ✅ Sudah menerima hasil pekerjaan?
                       </p>
-                      <Button 
-                        className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md" 
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md"
                         size="lg"
                         onClick={handleCompleteOrder}
                         disabled={completeOrderMutation.isPending}
@@ -765,9 +711,9 @@ export default function OrderConfirmation() {
                     </div>
 
                     {/* Tombol WhatsApp */}
-                    <a 
-                      href="https://wa.me/6285709557572" 
-                      target="_blank" 
+                    <a
+                      href="https://wa.me/6285709557572"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="block"
                     >
@@ -942,7 +888,7 @@ export default function OrderConfirmation() {
                       Silakan upload bukti pembayaran yang benar
                     </p>
                   </div>
-                  
+
                   <form onSubmit={handleUpload} className="space-y-4">
                     <div>
                       <Label htmlFor="payment-proof-retry">Bukti Pembayaran</Label>

@@ -133,7 +133,8 @@ export default function ServiceDetail() {
       setLocation("/login");
       return;
     }
-    setIsOrderDialogOpen(true);
+    // Redirect to checkout page
+    setLocation(`/checkout/${serviceId}`);
   };
 
   const handleApplyVoucher = async () => {
@@ -210,7 +211,8 @@ export default function ServiceDetail() {
         status: "pending",
         paymentStatus: "waiting_payment",
         uploadAttempts: 0,
-        ...(values.notes && { notes: values.notes }),
+        customerWhatsapp: user.phone || "08123456789", // Default value - this code is unused since flow redirects to Checkout
+        ...(values.notes && { customerNotes: values.notes }),
         ...(appliedVoucher?.code && { voucherCode: appliedVoucher.code }),
         ...(discountAmount > 0 && { discountAmount }),
       };

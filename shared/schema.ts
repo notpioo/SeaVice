@@ -22,6 +22,7 @@ export interface User {
   address?: string;
   notificationPreferences?: NotificationPreferences;
   loyaltyPoints?: number;
+  sealdo?: number; // SeaLdo balance
   createdAt: Date;
 }
 
@@ -34,6 +35,7 @@ export const insertUserSchema = z.object({
   address: z.string().optional(),
   notificationPreferences: notificationPreferencesSchema.optional(),
   loyaltyPoints: z.number().min(0).default(0),
+  sealdo: z.number().min(0).default(0), // SeaLdo balance
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -45,6 +47,7 @@ export const updateUserSchema = z.object({
   address: z.string().optional(),
   notificationPreferences: notificationPreferencesSchema.optional(),
   loyaltyPoints: z.number().min(0).optional(),
+  sealdo: z.number().min(0).optional(), // SeaLdo balance
 });
 
 export type UpdateUser = z.infer<typeof updateUserSchema>;
@@ -100,13 +103,18 @@ export interface Order {
   servicePrice: number;
   voucherCode?: string;
   discountAmount?: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
+  referralCode?: string;
   finalPrice: number;
+  paymentMethod: "sealdo" | "qris";
   status: OrderStatus;
   paymentProofUrl?: string;
   paymentStatus?: "waiting_payment" | "waiting_confirmation" | "confirmed" | "rejected";
   rejectionReason?: string;
   uploadAttempts?: number;
-  notes?: string;
+  customerWhatsapp?: string;
+  customerNotes?: string;
   rating?: number;
   review?: string;
   orderDate: Date;
@@ -123,13 +131,18 @@ export const insertOrderSchema = z.object({
   servicePrice: z.number().min(0, "Harga harus positif"),
   voucherCode: z.string().optional(),
   discountAmount: z.number().min(0).optional(),
+  pointsUsed: z.number().min(0).optional(),
+  pointsDiscount: z.number().min(0).optional(),
+  referralCode: z.string().optional(),
   finalPrice: z.number().min(0, "Harga final harus positif"),
+  paymentMethod: z.enum(["sealdo", "qris"]),
   status: orderStatusSchema.default("pending"),
   paymentProofUrl: z.string().optional(),
   paymentStatus: z.enum(["waiting_payment", "waiting_confirmation", "confirmed", "rejected"]).default("waiting_payment"),
   rejectionReason: z.string().optional(),
   uploadAttempts: z.number().min(0).default(0),
-  notes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
+  customerWhatsapp: z.string().min(10, "Nomor WhatsApp minimal 10 digit").regex(/^(\+62|62|0)[0-9]{9,12}$/, "Format nomor WhatsApp tidak valid"),
+  customerNotes: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
   deliveryDate: z.string().optional(),
 });
 

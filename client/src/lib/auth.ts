@@ -8,7 +8,7 @@ import {
   User as FirebaseUser,
   onAuthStateChanged
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore"; // Import Timestamp
 import { auth, db } from "./firebase";
 import type { User, UserRole } from "@shared/schema";
 
@@ -25,6 +25,8 @@ export async function registerWithEmail(
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const firebaseUser = userCredential.user;
 
+  const userDocRef = doc(db, "users", firebaseUser.uid); // Define userDocRef here
+
   const user: User = {
     id: firebaseUser.uid,
     email: firebaseUser.email!,
@@ -34,12 +36,15 @@ export async function registerWithEmail(
     createdAt: new Date(),
   };
 
+  // Add SeaLdo initialization
+  user.sealdo = 0;
+
   // Only add photoURL if it exists
   if (firebaseUser.photoURL) {
     user.photoURL = firebaseUser.photoURL;
   }
 
-  await setDoc(doc(db, "users", firebaseUser.uid), user);
+  await setDoc(userDocRef, user);
   return user;
 }
 
@@ -74,6 +79,9 @@ export async function signInWithGoogle(): Promise<User> {
     role: "user",
     createdAt: new Date(),
   };
+
+  // Add SeaLdo initialization
+  newUser.sealdo = 0;
 
   // Only add photoURL if it exists
   if (firebaseUser.photoURL) {
@@ -119,6 +127,15 @@ export function onAuthStateChange(callback: (user: User | null) => void) {
             displayName: firebaseUser.displayName || userData.displayName || "",
             photoURL: firebaseUser.photoURL || null,
             role: userData.role || "user",
+            phone: userData.phone || null,
+            address: userData.address || null,
+            loyaltyPoints: userData.loyaltyPoints || 0,
+            sealdo: userData.sealdo || 0, // Load SeaLdo from Firestore
+            notificationPreferences: userData.notificationPreferences || {
+              orderUpdates: true,
+              newOrders: true,
+              marketing: false,
+            },
           });
         } else {
           callback(null);

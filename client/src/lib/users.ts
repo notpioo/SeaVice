@@ -25,6 +25,7 @@ export function mapDocToUser(id: string, data: DocumentData): User {
       marketing: false,
     },
     loyaltyPoints: data.loyaltyPoints || 0,
+    sealdo: data.sealdo || 0, // Load SeaLdo
     createdAt: data.createdAt?.toDate(),
   };
 }
@@ -61,6 +62,65 @@ export async function updateUserProfile(
     console.log("✅ User profile updated successfully");
   } catch (error) {
     console.error("❌ Error updating user profile:", error);
+    throw error;
+  }
+}
+
+export async function addSealdo(
+  userId: string,
+  amount: number
+): Promise<void> {
+  try {
+    const userDocRef = doc(db, USERS_COLLECTION, userId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      throw new Error("User not found");
+    }
+
+    const currentSealdo = userDoc.data().sealdo || 0;
+    const newSealdo = currentSealdo + amount;
+
+    await updateDoc(userDocRef, {
+      sealdo: newSealdo,
+      updatedAt: Timestamp.now(),
+    });
+
+    console.log(`✅ Added Rp ${amount.toLocaleString("id-ID")} SeaLdo. New balance: Rp ${newSealdo.toLocaleString("id-ID")}`);
+  } catch (error) {
+    console.error("❌ Error adding SeaLdo:", error);
+    throw error;
+  }
+}
+
+export async function deductSealdo(
+  userId: string,
+  amount: number
+): Promise<void> {
+  try {
+    const userDocRef = doc(db, USERS_COLLECTION, userId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      throw new Error("User not found");
+    }
+
+    const currentSealdo = userDoc.data().sealdo || 0;
+
+    if (currentSealdo < amount) {
+      throw new Error("Insufficient SeaLdo balance");
+    }
+
+    const newSealdo = currentSealdo - amount;
+
+    await updateDoc(userDocRef, {
+      sealdo: newSealdo,
+      updatedAt: Timestamp.now(),
+    });
+
+    console.log(`✅ Deducted Rp ${amount.toLocaleString("id-ID")} SeaLdo. New balance: Rp ${newSealdo.toLocaleString("id-ID")}`);
+  } catch (error) {
+    console.error("❌ Error deducting SeaLdo:", error);
     throw error;
   }
 }

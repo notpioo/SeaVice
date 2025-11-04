@@ -30,13 +30,14 @@ function mapDocToOrder(id: string, data: DocumentData): Order {
     voucherCode: data.voucherCode,
     discountAmount: data.discountAmount,
     finalPrice: data.finalPrice,
+    paymentMethod: data.paymentMethod || "qris",
     status: data.status,
     paymentStatus: data.paymentStatus,
     paymentProofUrl: data.paymentProofUrl,
     uploadAttempts: data.uploadAttempts || 0,
     notes: data.notes,
-    rating: data.rating, // Added rating field
-    review: data.review, // Added review field
+    rating: data.rating,
+    review: data.review,
     orderDate: data.orderDate?.toDate(),
     deliveryDate: data.deliveryDate?.toDate(),
     createdAt: data.createdAt?.toDate(),

@@ -349,7 +349,7 @@ export default function Profile() {
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground">SeaLdo</p>
-                    <p className="font-semibold text-sm">Rp 0</p>
+                    <p className="font-semibold text-sm">Rp {(user.sealdo || 0).toLocaleString("id-ID")}</p>
                   </div>
                 </button>
 

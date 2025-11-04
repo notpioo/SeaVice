@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
+import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Payment from "./pages/Payment";
@@ -109,6 +110,11 @@ function AppContent() {
           <Route path="/layanan" component={Services} />
           <Route path="/services/:id" component={ServiceDetail} />
           <Route path="/layanan/:id" component={ServiceDetail} />
+          <Route path="/checkout/:serviceId">
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
+          </Route>
           <Route path="/orders">
             <ProtectedRoute>
               <Orders />
