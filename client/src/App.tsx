@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import AdminOrders from "./pages/AdminOrders";
 import AdminVouchers from "./pages/AdminVouchers";
 import AdminNotifications from "./pages/AdminNotifications";
+import Pulsa from "./pages/Pulsa";
 import NotFound from "./pages/not-found";
 // PWA Update Prompt disabled to prevent reload loop
 // import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
@@ -163,6 +164,11 @@ function AppContent() {
           <Route path="/admin/notifications">
             <ProtectedRoute requiredRole="admin">
               <AdminNotifications />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/pulsa">
+            <ProtectedRoute>
+              <Pulsa />
             </ProtectedRoute>
           </Route>
           <Route component={NotFound} />

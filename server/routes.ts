@@ -5,6 +5,11 @@ import { sendFCMNotification } from "./fcm";
 import multer from "multer";
 import cloudinary from "./cloudinary";
 
+// VIP Reseller API Configuration
+const VIPRESELLER_API_URL = "https://vip-reseller.co.id/api/prepaid";
+const VIPRESELLER_API_KEY = process.env.VIPRESELLER_API_KEY || "";
+const VIPRESELLER_SIGN = process.env.VIPRESELLER_SIGN || "";
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
@@ -152,6 +157,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Upload error:", error);
       res.status(500).send({ message: error.message });
+    }
+  });
+
+  // VIP Reseller - Get Pulsa Services
+  router.post("/api/pulsa/services", async (req: Request, res: Response) => {
+    try {
+      const { filter_type, filter_value } = req.body;
+
+      console.log('📱 [Pulsa API] Fetching services');
+      console.log('📱 [Pulsa API] Filter type:', filter_type);
+      console.log('📱 [Pulsa API] Filter value:', filter_value);
+
+      if (!VIPRESELLER_API_KEY || !VIPRESELLER_SIGN) {
+        console.error('❌ [Pulsa API] Missing API credentials');
+        return res.status(500).json({ 
+          result: false, 
+          data: [],
+          message: "API credentials not configured" 
+        });
+      }
+
+      const formData = new URLSearchParams();
+      formData.append('key', VIPRESELLER_API_KEY);
+      formData.append('sign', VIPRESELLER_SIGN);
+      formData.append('type', 'services');
+      
+      if (filter_type) {
+        formData.append('filter_type', filter_type);
+      }
+      if (filter_value) {
+        formData.append('filter_value', filter_value);
+      }
+
+      const response = await fetch(VIPRESELLER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        console.error('❌ [Pulsa API] HTTP Error:', response.status);
+        return res.status(response.status).json({ 
+          result: false, 
+          data: [],
+          message: `HTTP Error: ${response.status}` 
+        });
+      }
+
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('❌ [Pulsa API] Failed to parse response:', text.substring(0, 200));
+        return res.status(500).json({ 
+          result: false, 
+          data: [],
+          message: "Invalid response from provider" 
+        });
+      }
+
+      console.log('📱 [Pulsa API] Response:', data.message);
+      console.log('📱 [Pulsa API] Services count:', data.data?.length || 0);
+
+      res.json(data);
+    } catch (error: any) {
+      console.error('❌ [Pulsa API] Error:', error);
+      res.status(500).json({ result: false, data: [], message: error.message });
     }
   });
 
