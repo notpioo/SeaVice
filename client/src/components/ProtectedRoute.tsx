@@ -19,7 +19,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
       if (user.role === "admin") {
         setLocation("/admin");
       } else {
-        setLocation("/home");
+        setLocation("/beranda");
       }
     }
   }, [user, loading, requiredRole, setLocation]);

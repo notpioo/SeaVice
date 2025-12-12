@@ -64,7 +64,7 @@ export default function Register() {
 
       // Use window.location for more reliable redirect
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = "/beranda";
       }, 500);
     } catch (error: any) {
       toast({
@@ -94,7 +94,7 @@ export default function Register() {
         });
 
         setTimeout(() => {
-          window.location.href = "/";
+          window.location.href = "/beranda";
         }, 500);
       }
     } catch (error: any) {
@@ -136,7 +136,7 @@ export default function Register() {
 
       setShowPhoneDialog(false);
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = "/beranda";
       }, 500);
     } catch (error: any) {
       toast({

@@ -29,7 +29,7 @@ export function Navbar({ className = "" }: { className?: string }) {
   const handleSignOut = async () => {
     await signOut();
     setUser(null);
-    window.location.href = "/";
+    window.location.href = "/login";
   };
 
   const navLinks = user?.role === "admin"
@@ -54,7 +54,7 @@ export function Navbar({ className = "" }: { className?: string }) {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" data-testid="link-home">
+          <Link href={user ? "/beranda" : "/login"} data-testid="link-home">
             <div className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg transition-all cursor-pointer">
               <div className="text-2xl font-bold bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">
                 SeaVice

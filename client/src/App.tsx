@@ -5,7 +5,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
-import Landing from "./pages/Landing";
+// Landing page removed - app now goes directly to Home/Beranda
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -99,7 +99,11 @@ function AppContent() {
       <Navbar />
       <main className="flex-grow pt-16 md:pt-20">
         <Switch>
-          <Route path="/" component={Landing} />
+          <Route path="/">
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          </Route>
           <Route path="/beranda">
             <ProtectedRoute>
               <Home />

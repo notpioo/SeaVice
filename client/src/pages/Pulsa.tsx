@@ -182,8 +182,14 @@ export default function Pulsa() {
     });
   }, [pulsaData, selectedCategory, searchQuery]);
 
-  const pulsa = filteredServices.filter(s => s.type === "pulsa" || s.category.toLowerCase().includes("pulsa"));
-  const paketData = filteredServices.filter(s => s.type !== "pulsa" && !s.category.toLowerCase().includes("pulsa"));
+  // Separate and sort by price (cheapest first)
+  const pulsa = filteredServices
+    .filter(s => s.type === "pulsa" || s.category.toLowerCase().includes("pulsa"))
+    .sort((a, b) => a.price.basic - b.price.basic);
+  
+  const paketData = filteredServices
+    .filter(s => s.type !== "pulsa" && !s.category.toLowerCase().includes("pulsa"))
+    .sort((a, b) => a.price.basic - b.price.basic);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">

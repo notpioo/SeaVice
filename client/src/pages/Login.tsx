@@ -59,7 +59,7 @@ export default function Login() {
         if (user.role === "admin") {
           window.location.href = "/admin";
         } else {
-          window.location.href = "/";
+          window.location.href = "/beranda";
         }
       }, 500);
     } catch (error: any) {
@@ -96,7 +96,7 @@ export default function Login() {
         if (user.role === "admin") {
           window.location.href = "/admin";
         } else {
-          window.location.href = "/";
+          window.location.href = "/beranda";
         }
       }, 500);
     } catch (error: any) {
@@ -141,7 +141,7 @@ export default function Login() {
         if (updatedUser.role === "admin") {
           window.location.href = "/admin";
         } else {
-          window.location.href = "/";
+          window.location.href = "/beranda";
         }
       }, 500);
     } catch (error: any) {

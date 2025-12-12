@@ -149,5 +149,11 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Fetch and log public IP on startup for whitelist purposes
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => log(`🌐 Public IP Address: ${data.ip}`))
+      .catch(err => log(`Could not fetch public IP: ${err.message}`));
   });
 })();
