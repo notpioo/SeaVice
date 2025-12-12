@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { Smartphone, Search, ArrowLeft, Phone, Signal, Wifi } from "lucide-react";
+import { Smartphone, Search, ArrowLeft, Signal } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -121,16 +121,6 @@ function getCarrierColor(brand: string | null): string {
   }
 }
 
-function getCategoryIcon(category: string) {
-  const lower = category.toLowerCase();
-  if (lower.includes("internet") || lower.includes("data") || lower.includes("hotrod")) {
-    return <Wifi className="h-4 w-4" />;
-  }
-  if (lower.includes("telepon") || lower.includes("nelpon")) {
-    return <Phone className="h-4 w-4" />;
-  }
-  return <Signal className="h-4 w-4" />;
-}
 
 export default function Pulsa() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -140,11 +130,12 @@ export default function Pulsa() {
   const detectedCarrier = useMemo(() => detectCarrier(phoneNumber), [phoneNumber]);
 
   const { data: pulsaData, isLoading, error } = useQuery<PulsaResponse>({
-    queryKey: ["/api/pulsa/services", detectedCarrier?.brand],
+    queryKey: ["/api/pulsa/services", "pulsa-reguler", detectedCarrier?.brand],
     queryFn: async () => {
       const response = await apiRequest("POST", "/api/pulsa/services", {
-        filter_type: detectedCarrier ? "brand" : undefined,
-        filter_value: detectedCarrier?.brand || undefined,
+        filter_type: "type",
+        filter_value: "pulsa-reguler",
+        brand_filter: detectedCarrier?.brand,
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
@@ -182,14 +173,8 @@ export default function Pulsa() {
     });
   }, [pulsaData, selectedCategory, searchQuery]);
 
-  // Separate and sort by price (cheapest first)
-  const pulsa = filteredServices
-    .filter(s => s.type === "pulsa" || s.category.toLowerCase().includes("pulsa"))
-    .sort((a, b) => a.price.basic - b.price.basic);
-  
-  const paketData = filteredServices
-    .filter(s => s.type !== "pulsa" && !s.category.toLowerCase().includes("pulsa"))
-    .sort((a, b) => a.price.basic - b.price.basic);
+  // Sort by price (cheapest first)
+  const sortedServices = filteredServices.sort((a, b) => a.price.basic - b.price.basic);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -313,14 +298,14 @@ export default function Pulsa() {
 
             {!isLoading && !error && pulsaData && (
               <div className="space-y-6">
-                {pulsa.length > 0 && (
+                {sortedServices.length > 0 && (
                   <div>
                     <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                       <Signal className="h-5 w-5" />
-                      Pulsa
+                      Pulsa {detectedCarrier?.displayName}
                     </h2>
                     <div className="grid gap-3">
-                      {pulsa.map((service) => (
+                      {sortedServices.map((service) => (
                         <Card 
                           key={service.code} 
                           className="hover-elevate cursor-pointer"
@@ -330,13 +315,10 @@ export default function Pulsa() {
                             <div className="flex items-center justify-between gap-4">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  {getCategoryIcon(service.category)}
+                                  <Signal className="h-4 w-4" />
                                   <h3 className="font-medium truncate">{service.name}</h3>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Badge variant="outline" className="text-xs">
-                                    {service.category}
-                                  </Badge>
                                   {service.note && service.note !== "-" && (
                                     <span className="truncate">{service.note}</span>
                                   )}
@@ -358,59 +340,14 @@ export default function Pulsa() {
                   </div>
                 )}
 
-                {paketData.length > 0 && (
-                  <div>
-                    <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                      <Wifi className="h-5 w-5" />
-                      Paket Data & Lainnya
-                    </h2>
-                    <div className="grid gap-3">
-                      {paketData.map((service) => (
-                        <Card 
-                          key={service.code} 
-                          className="hover-elevate cursor-pointer"
-                          data-testid={`card-service-${service.code}`}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  {getCategoryIcon(service.category)}
-                                  <h3 className="font-medium truncate">{service.name}</h3>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Badge variant="outline" className="text-xs">
-                                    {service.category}
-                                  </Badge>
-                                  {service.note && service.note !== "-" && (
-                                    <span className="truncate">{service.note}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="font-bold text-lg text-primary">
-                                  {formatPrice(service.price.basic)}
-                                </p>
-                                <Button size="sm" className="mt-1" data-testid={`button-buy-${service.code}`}>
-                                  Beli
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {filteredServices.length === 0 && (
+                {sortedServices.length === 0 && (
                   <Card>
                     <CardContent className="p-8 text-center">
                       <Smartphone className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                       <p className="text-muted-foreground">
                         {searchQuery || selectedCategory
                           ? "Tidak ada produk yang sesuai dengan filter"
-                          : `Tidak ada produk tersedia untuk ${detectedCarrier?.displayName || "operator ini"}`}
+                          : `Tidak ada pulsa tersedia untuk ${detectedCarrier?.displayName || "operator ini"}`}
                       </p>
                     </CardContent>
                   </Card>

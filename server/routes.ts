@@ -10,6 +10,9 @@ const VIPRESELLER_API_URL = "https://vip-reseller.co.id/api/prepaid";
 const VIPRESELLER_API_KEY = process.env.VIPRESELLER_API_KEY || "";
 const VIPRESELLER_SIGN = process.env.VIPRESELLER_SIGN || "";
 
+console.log('🔑 [Config] VIP Reseller API Key loaded:', VIPRESELLER_API_KEY ? '✅ Yes' : '❌ No');
+console.log('🔑 [Config] VIP Reseller Sign loaded:', VIPRESELLER_SIGN ? '✅ Yes' : '❌ No');
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
@@ -163,11 +166,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // VIP Reseller - Get Pulsa Services
   router.post("/api/pulsa/services", async (req: Request, res: Response) => {
     try {
-      const { filter_type, filter_value } = req.body;
+      const { filter_type, filter_value, brand_filter } = req.body;
 
       console.log('📱 [Pulsa API] Fetching services');
       console.log('📱 [Pulsa API] Filter type:', filter_type);
       console.log('📱 [Pulsa API] Filter value:', filter_value);
+      console.log('📱 [Pulsa API] Brand filter:', brand_filter);
 
       if (!VIPRESELLER_API_KEY || !VIPRESELLER_SIGN) {
         console.error('❌ [Pulsa API] Missing API credentials');
@@ -218,6 +222,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data: [],
           message: "Invalid response from provider" 
         });
+      }
+
+      // Filter by brand if brand_filter is provided
+      if (brand_filter && data.result && Array.isArray(data.data)) {
+        data.data = data.data.filter((service: any) => 
+          service.brand && service.brand.toUpperCase() === brand_filter.toUpperCase()
+        );
+        console.log('📱 [Pulsa API] Filtered by brand:', brand_filter);
       }
 
       console.log('📱 [Pulsa API] Response:', data.message);

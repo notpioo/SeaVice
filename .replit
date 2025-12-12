@@ -48,6 +48,3 @@ expertMode = true
 [userenv]
 
 [userenv.shared]
-VIPRESELLER_APP_ID = "oFARENos"
-VIPRESELLER_API_KEY = "c5hTasos5FJMC2ciSL9ZWxbXTVNtTfIN9VSpV2jDCK9rbhkGrbqNr6Mc72qlDH3W"
-VIPRESELLER_SIGN = "020877acacf81ac6ab4ccfc5a45b83a8"
