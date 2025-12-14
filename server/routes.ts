@@ -163,10 +163,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // VIP Reseller - Get Pulsa Services
+  // In-memory storage for product customizations (will be moved to Firebase later)
+  const productCustomizations = new Map<string, any>();
+  const globalMarkupSettings = new Map<string, any>();
+
+  // Initialize default global markup for pulsa
+  if (!globalMarkupSettings.has('pulsa')) {
+    globalMarkupSettings.set('pulsa', {
+      id: 'pulsa',
+      productType: 'pulsa',
+      markupType: 'fixed',
+      markupValue: 500, // Default Rp 500 markup
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  // Get all product customizations
+  router.get("/api/admin/product-customizations", async (req: Request, res: Response) => {
+    try {
+      const customizations = Array.from(productCustomizations.values());
+      res.json({ result: true, data: customizations });
+    } catch (error: any) {
+      console.error('❌ [Admin API] Error fetching customizations:', error);
+      res.status(500).json({ result: false, message: error.message });
+    }
+  });
+
+  // Get product customization by code
+  router.get("/api/admin/product-customizations/:code", async (req: Request, res: Response) => {
+    try {
+      const { code } = req.params;
+      const customization = productCustomizations.get(code);
+      if (customization) {
+        res.json({ result: true, data: customization });
+      } else {
+        res.json({ result: false, data: null, message: "Customization not found" });
+      }
+    } catch (error: any) {
+      console.error('❌ [Admin API] Error fetching customization:', error);
+      res.status(500).json({ result: false, message: error.message });
+    }
+  });
+
+  // Create or update product customization
+  router.post("/api/admin/product-customizations", async (req: Request, res: Response) => {
+    try {
+      const customization = req.body;
+      const id = customization.productCode;
+      
+      const existing = productCustomizations.get(id);
+      const now = new Date();
+      
+      const updatedCustomization = {
+        ...customization,
+        id,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+      };
+      
+      productCustomizations.set(id, updatedCustomization);
+      console.log('✅ [Admin API] Product customization saved:', id);
+      
+      res.json({ result: true, data: updatedCustomization });
+    } catch (error: any) {
+      console.error('❌ [Admin API] Error saving customization:', error);
+      res.status(500).json({ result: false, message: error.message });
+    }
+  });
+
+  // Bulk update product customizations
+  router.post("/api/admin/product-customizations/bulk", async (req: Request, res: Response) => {
+    try {
+      const { customizations } = req.body;
+      const now = new Date();
+      
+      for (const customization of customizations) {
+        const id = customization.productCode;
+        const existing = productCustomizations.get(id);
+        
+        const updatedCustomization = {
+          ...customization,
+          id,
+          createdAt: existing?.createdAt || now,
+          updatedAt: now,
+        };
+        
+        productCustomizations.set(id, updatedCustomization);
+      }
+      
+      console.log('✅ [Admin API] Bulk customizations saved:', customizations.length);
+      res.json({ result: true, message: `${customizations.length} products updated` });
+    } catch (error: any) {
+      console.error('❌ [Admin API] Error saving bulk customizations:', error);
+      res.status(500).json({ result: false, message: error.message });
+    }
+  });
+
+  // Delete product customization
+  router.delete("/api/admin/product-customizations/:code", async (req: Request, res: Response) => {
+    try {
+      const { code } = req.params;
+      productCustomizations.delete(code);
+      console.log('✅ [Admin API] Product customization deleted:', code);
+      res.json({ result: true, message: "Customization deleted" });
+    } catch (error: any) {
+      console.error('❌ [Admin API] Error deleting customization:', error);
+      res.status(500).json({ result: false, message: error.message });
+    }
+  });
+
+  // Get global markup settings
+  router.get("/api/admin/global-markup", async (req: Request, res: Response) => {
+    try {
+      const settings = Array.from(globalMarkupSettings.values());
+      res.json({ result: true, data: settings });
+    } catch (error: any) {
+      console.error('❌ [Admin API] Error fetching global markup:', error);
+      res.status(500).json({ result: false, message: error.message });
+    }
+  });
+
+  // Update global markup settings
+  router.post("/api/admin/global-markup", async (req: Request, res: Response) => {
+    try {
+      const setting = req.body;
+      const id = setting.productType;
+      const now = new Date();
+      
+      const existing = globalMarkupSettings.get(id);
+      const updatedSetting = {
+        ...setting,
+        id,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+      };
+      
+      globalMarkupSettings.set(id, updatedSetting);
+      console.log('✅ [Admin API] Global markup saved:', id, updatedSetting);
+      
+      res.json({ result: true, data: updatedSetting });
+    } catch (error: any) {
+      console.error('❌ [Admin API] Error saving global markup:', error);
+      res.status(500).json({ result: false, message: error.message });
+    }
+  });
+
+  // VIP Reseller - Get Pulsa Services (with customization applied)
   router.post("/api/pulsa/services", async (req: Request, res: Response) => {
     try {
-      const { filter_type, filter_value, brand_filter } = req.body;
+      const { filter_type, filter_value, brand_filter, apply_customization } = req.body;
 
       console.log('📱 [Pulsa API] Fetching services');
       console.log('📱 [Pulsa API] Filter type:', filter_type);
@@ -232,12 +379,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📱 [Pulsa API] Filtered by brand:', brand_filter);
       }
 
+      // Apply customizations if requested (for customer-facing pages)
+      if (apply_customization !== false && data.result && Array.isArray(data.data)) {
+        const globalPulsaMarkup = globalMarkupSettings.get('pulsa');
+        
+        data.data = data.data.map((service: any) => {
+          const customization = productCustomizations.get(service.code);
+          
+          // Check visibility - if customization exists and is hidden, mark for filtering
+          if (customization && customization.isVisible === false) {
+            return { ...service, _hidden: true };
+          }
+          
+          // Calculate selling price
+          let sellingPrice = service.price.basic;
+          
+          // Apply custom price if set
+          if (customization?.customPrice) {
+            sellingPrice = customization.customPrice;
+          } else if (customization?.markupValue) {
+            // Apply per-product markup
+            if (customization.markupType === 'percentage') {
+              sellingPrice = Math.ceil(service.price.basic * (1 + customization.markupValue / 100));
+            } else {
+              sellingPrice = service.price.basic + customization.markupValue;
+            }
+          } else if (globalPulsaMarkup?.isActive && globalPulsaMarkup.markupValue > 0) {
+            // Apply global markup
+            if (globalPulsaMarkup.markupType === 'percentage') {
+              sellingPrice = Math.ceil(service.price.basic * (1 + globalPulsaMarkup.markupValue / 100));
+            } else {
+              sellingPrice = service.price.basic + globalPulsaMarkup.markupValue;
+            }
+          }
+          
+          return {
+            ...service,
+            name: customization?.customName || service.name,
+            note: customization?.customNote || service.note,
+            originalPrice: service.price.basic,
+            sellingPrice: sellingPrice,
+            isPromo: customization?.isPromo || false,
+            promoLabel: customization?.promoLabel || null,
+            sortOrder: customization?.sortOrder || 0,
+          };
+        }).filter((service: any) => !service._hidden); // Remove hidden products
+        
+        // Sort by custom order if any
+        data.data.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      }
+
       console.log('📱 [Pulsa API] Response:', data.message);
       console.log('📱 [Pulsa API] Services count:', data.data?.length || 0);
 
       res.json(data);
     } catch (error: any) {
       console.error('❌ [Pulsa API] Error:', error);
+      res.status(500).json({ result: false, data: [], message: error.message });
+    }
+  });
+
+  // VIP Reseller - Get Raw Services (for admin without customization)
+  router.post("/api/pulsa/services/raw", async (req: Request, res: Response) => {
+    try {
+      const { filter_type, filter_value, brand_filter } = req.body;
+
+      if (!VIPRESELLER_API_KEY || !VIPRESELLER_SIGN) {
+        return res.status(500).json({ 
+          result: false, 
+          data: [],
+          message: "API credentials not configured" 
+        });
+      }
+
+      const formData = new URLSearchParams();
+      formData.append('key', VIPRESELLER_API_KEY);
+      formData.append('sign', VIPRESELLER_SIGN);
+      formData.append('type', 'services');
+      
+      if (filter_type) formData.append('filter_type', filter_type);
+      if (filter_value) formData.append('filter_value', filter_value);
+
+      const response = await fetch(VIPRESELLER_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        return res.status(response.status).json({ 
+          result: false, 
+          data: [],
+          message: `HTTP Error: ${response.status}` 
+        });
+      }
+
+      const text = await response.text();
+      let data = JSON.parse(text);
+
+      // Filter by brand if provided
+      if (brand_filter && data.result && Array.isArray(data.data)) {
+        data.data = data.data.filter((service: any) => 
+          service.brand && service.brand.toUpperCase() === brand_filter.toUpperCase()
+        );
+      }
+
+      // Add customization info to each service
+      if (data.result && Array.isArray(data.data)) {
+        data.data = data.data.map((service: any) => {
+          const customization = productCustomizations.get(service.code);
+          return {
+            ...service,
+            customization: customization || null,
+          };
+        });
+      }
+
+      res.json(data);
+    } catch (error: any) {
+      console.error('❌ [Pulsa API Raw] Error:', error);
       res.status(500).json({ result: false, data: [], message: error.message });
     }
   });

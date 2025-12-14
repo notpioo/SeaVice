@@ -28,7 +28,8 @@ import { insertServiceSchema, type Service, type InsertService } from "@shared/s
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { getAllServices, createService, updateService, deleteService } from "@/lib/services";
-import { Plus, Edit, Trash2, Package, Loader2, Ticket, Bell } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Loader2, Ticket, Bell, Signal } from "lucide-react";
+import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminVouchers from "./AdminVouchers";
 import AdminOrders from "./AdminOrders";
@@ -232,6 +233,10 @@ export default function Admin() {
               <TabsTrigger value="notifications" data-testid="tab-notifications" className="flex-shrink-0 text-xs md:text-sm">
                 <Bell className="h-4 w-4 mr-1 md:mr-2" />
                 <span className="hidden xs:inline">Notifikasi</span>
+              </TabsTrigger>
+              <TabsTrigger value="pulsa" data-testid="tab-pulsa" className="flex-shrink-0 text-xs md:text-sm">
+                <Signal className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden xs:inline">Pulsa</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -608,6 +613,49 @@ export default function Admin() {
 
           <TabsContent value="notifications">
             <AdminNotifications />
+          </TabsContent>
+
+          <TabsContent value="pulsa">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <div>
+                <h2 className="text-2xl font-bold">Kelola Produk Pulsa</h2>
+                <p className="text-muted-foreground">Atur harga, visibilitas, dan markup produk pulsa</p>
+              </div>
+              <Link href="/admin/pulsa-products">
+                <Button data-testid="button-manage-pulsa">
+                  <Signal className="h-4 w-4 mr-2" />
+                  Kelola Produk
+                </Button>
+              </Link>
+            </div>
+
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Signal className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Pengaturan Produk Pulsa</h3>
+                <p className="text-muted-foreground mb-4">
+                  Klik tombol di atas untuk mengatur harga jual, visibilitas, dan markup produk pulsa
+                </p>
+                <ul className="text-sm text-muted-foreground text-left max-w-md mx-auto space-y-2">
+                  <li className="flex items-center gap-2">
+                    <Badge variant="outline">1</Badge>
+                    Atur markup global untuk semua produk pulsa
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Badge variant="outline">2</Badge>
+                    Kustomisasi harga per produk
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Badge variant="outline">3</Badge>
+                    Sembunyikan produk yang tidak ingin dijual
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Badge variant="outline">4</Badge>
+                    Tandai produk sebagai promo
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

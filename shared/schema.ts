@@ -281,3 +281,56 @@ export const insertAnnouncementSchema = announcementSchema.omit({
 
 export type Announcement = z.infer<typeof announcementSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+
+// Product Customization Schema for managing pulsa/data products
+export const productCustomizationSchema = z.object({
+  id: z.string(),
+  productCode: z.string(), // Code from VIP Reseller (e.g., "T5", "XL10")
+  productType: z.enum(["pulsa", "data", "pln", "game", "ewallet"]),
+  brand: z.string(), // TELKOMSEL, XL, INDOSAT, etc.
+  isVisible: z.boolean().default(true), // Show/hide product
+  customPrice: z.number().optional(), // Custom selling price (if set, overrides markup)
+  markupType: z.enum(["percentage", "fixed"]).default("fixed"),
+  markupValue: z.number().default(0), // Markup amount (percentage or fixed)
+  sortOrder: z.number().default(0), // Display order
+  customName: z.string().optional(), // Custom product name
+  customNote: z.string().optional(), // Custom note/description
+  isPromo: z.boolean().default(false), // Mark as promo
+  promoLabel: z.string().optional(), // Promo label text
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type ProductCustomization = z.infer<typeof productCustomizationSchema>;
+
+export const insertProductCustomizationSchema = productCustomizationSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertProductCustomization = z.infer<typeof insertProductCustomizationSchema>;
+
+export const updateProductCustomizationSchema = insertProductCustomizationSchema.partial();
+export type UpdateProductCustomization = z.infer<typeof updateProductCustomizationSchema>;
+
+// Global Markup Settings Schema
+export const globalMarkupSettingsSchema = z.object({
+  id: z.string(),
+  productType: z.enum(["pulsa", "data", "pln", "game", "ewallet"]),
+  markupType: z.enum(["percentage", "fixed"]).default("fixed"),
+  markupValue: z.number().default(0),
+  isActive: z.boolean().default(true),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type GlobalMarkupSettings = z.infer<typeof globalMarkupSettingsSchema>;
+
+export const insertGlobalMarkupSettingsSchema = globalMarkupSettingsSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertGlobalMarkupSettings = z.infer<typeof insertGlobalMarkupSettingsSchema>;

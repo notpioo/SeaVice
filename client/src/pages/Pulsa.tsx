@@ -25,6 +25,11 @@ interface PulsaService {
   category: string;
   prepost: string;
   type: string;
+  sellingPrice?: number;
+  originalPrice?: number;
+  isPromo?: boolean;
+  promoLabel?: string;
+  sortOrder?: number;
 }
 
 interface PulsaResponse {
@@ -173,8 +178,15 @@ export default function Pulsa() {
     });
   }, [pulsaData, selectedCategory, searchQuery]);
 
-  // Sort by price (cheapest first)
-  const sortedServices = filteredServices.sort((a, b) => a.price.basic - b.price.basic);
+  // Sort by custom order first, then by price (cheapest first)
+  const sortedServices = filteredServices.sort((a, b) => {
+    const orderA = a.sortOrder || 0;
+    const orderB = b.sortOrder || 0;
+    if (orderA !== orderB) return orderA - orderB;
+    const priceA = a.sellingPrice || a.price.basic;
+    const priceB = b.sellingPrice || b.price.basic;
+    return priceA - priceB;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -305,37 +317,45 @@ export default function Pulsa() {
                       Pulsa {detectedCarrier?.displayName}
                     </h2>
                     <div className="grid gap-3">
-                      {sortedServices.map((service) => (
-                        <Card 
-                          key={service.code} 
-                          className="hover-elevate cursor-pointer"
-                          data-testid={`card-service-${service.code}`}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Signal className="h-4 w-4" />
-                                  <h3 className="font-medium truncate">{service.name}</h3>
+                      {sortedServices.map((service) => {
+                        const displayPrice = service.sellingPrice || service.price.basic;
+                        return (
+                          <Card 
+                            key={service.code} 
+                            className="hover-elevate cursor-pointer"
+                            data-testid={`card-service-${service.code}`}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    <Signal className="h-4 w-4 shrink-0" />
+                                    <h3 className="font-medium truncate">{service.name}</h3>
+                                    {service.isPromo && (
+                                      <Badge className="shrink-0" data-testid={`badge-promo-${service.code}`}>
+                                        {service.promoLabel || "Promo"}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    {service.note && service.note !== "-" && (
+                                      <span className="truncate">{service.note}</span>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  {service.note && service.note !== "-" && (
-                                    <span className="truncate">{service.note}</span>
-                                  )}
+                                <div className="text-right shrink-0">
+                                  <p className="font-bold text-lg text-primary">
+                                    {formatPrice(displayPrice)}
+                                  </p>
+                                  <Button size="sm" className="mt-1" data-testid={`button-buy-${service.code}`}>
+                                    Beli
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="text-right shrink-0">
-                                <p className="font-bold text-lg text-primary">
-                                  {formatPrice(service.price.basic)}
-                                </p>
-                                <Button size="sm" className="mt-1" data-testid={`button-buy-${service.code}`}>
-                                  Beli
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
