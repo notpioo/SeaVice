@@ -4,6 +4,17 @@ import { Router, type Request, type Response } from "express";
 import { sendFCMNotification } from "./fcm";
 import multer from "multer";
 import cloudinary from "./cloudinary";
+import {
+  getAllProductCustomizations,
+  getProductCustomization,
+  saveProductCustomization,
+  saveBulkProductCustomizations,
+  deleteProductCustomization,
+  getAllGlobalMarkupSettings,
+  getGlobalMarkupSetting,
+  saveGlobalMarkupSetting,
+  initializeDefaultGlobalMarkup,
+} from "./firestore";
 
 // VIP Reseller API Configuration
 const VIPRESELLER_API_URL = "https://vip-reseller.co.id/api/prepaid";
@@ -163,27 +174,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // In-memory storage for product customizations (will be moved to Firebase later)
-  const productCustomizations = new Map<string, any>();
-  const globalMarkupSettings = new Map<string, any>();
+  // Initialize default global markup settings on startup
+  initializeDefaultGlobalMarkup().catch(err => {
+    console.error('❌ [Firestore] Failed to initialize default markup:', err);
+  });
 
-  // Initialize default global markup for pulsa
-  if (!globalMarkupSettings.has('pulsa')) {
-    globalMarkupSettings.set('pulsa', {
-      id: 'pulsa',
-      productType: 'pulsa',
-      markupType: 'fixed',
-      markupValue: 500, // Default Rp 500 markup
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  }
-
-  // Get all product customizations
+  // Get all product customizations (from Firestore)
   router.get("/api/admin/product-customizations", async (req: Request, res: Response) => {
     try {
-      const customizations = Array.from(productCustomizations.values());
+      const customizations = await getAllProductCustomizations();
       res.json({ result: true, data: customizations });
     } catch (error: any) {
       console.error('❌ [Admin API] Error fetching customizations:', error);
@@ -191,11 +190,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get product customization by code
+  // Get product customization by code (from Firestore)
   router.get("/api/admin/product-customizations/:code", async (req: Request, res: Response) => {
     try {
       const { code } = req.params;
-      const customization = productCustomizations.get(code);
+      const customization = await getProductCustomization(code);
       if (customization) {
         res.json({ result: true, data: customization });
       } else {
@@ -207,25 +206,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create or update product customization
+  // Create or update product customization (to Firestore)
   router.post("/api/admin/product-customizations", async (req: Request, res: Response) => {
     try {
       const customization = req.body;
-      const id = customization.productCode;
-      
-      const existing = productCustomizations.get(id);
-      const now = new Date();
-      
-      const updatedCustomization = {
-        ...customization,
-        id,
-        createdAt: existing?.createdAt || now,
-        updatedAt: now,
-      };
-      
-      productCustomizations.set(id, updatedCustomization);
-      console.log('✅ [Admin API] Product customization saved:', id);
-      
+      const updatedCustomization = await saveProductCustomization(customization);
       res.json({ result: true, data: updatedCustomization });
     } catch (error: any) {
       console.error('❌ [Admin API] Error saving customization:', error);
@@ -233,39 +218,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk update product customizations
+  // Bulk update product customizations (to Firestore)
   router.post("/api/admin/product-customizations/bulk", async (req: Request, res: Response) => {
     try {
       const { customizations } = req.body;
-      const now = new Date();
-      
-      for (const customization of customizations) {
-        const id = customization.productCode;
-        const existing = productCustomizations.get(id);
-        
-        const updatedCustomization = {
-          ...customization,
-          id,
-          createdAt: existing?.createdAt || now,
-          updatedAt: now,
-        };
-        
-        productCustomizations.set(id, updatedCustomization);
-      }
-      
-      console.log('✅ [Admin API] Bulk customizations saved:', customizations.length);
-      res.json({ result: true, message: `${customizations.length} products updated` });
+      const count = await saveBulkProductCustomizations(customizations);
+      console.log('✅ [Admin API] Bulk customizations saved:', count);
+      res.json({ result: true, message: `${count} products updated` });
     } catch (error: any) {
       console.error('❌ [Admin API] Error saving bulk customizations:', error);
       res.status(500).json({ result: false, message: error.message });
     }
   });
 
-  // Delete product customization
+  // Delete product customization (from Firestore)
   router.delete("/api/admin/product-customizations/:code", async (req: Request, res: Response) => {
     try {
       const { code } = req.params;
-      productCustomizations.delete(code);
+      await deleteProductCustomization(code);
       console.log('✅ [Admin API] Product customization deleted:', code);
       res.json({ result: true, message: "Customization deleted" });
     } catch (error: any) {
@@ -274,10 +244,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get global markup settings
+  // Get global markup settings (from Firestore)
   router.get("/api/admin/global-markup", async (req: Request, res: Response) => {
     try {
-      const settings = Array.from(globalMarkupSettings.values());
+      const settings = await getAllGlobalMarkupSettings();
       res.json({ result: true, data: settings });
     } catch (error: any) {
       console.error('❌ [Admin API] Error fetching global markup:', error);
@@ -285,24 +255,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update global markup settings
+  // Update global markup settings (to Firestore)
   router.post("/api/admin/global-markup", async (req: Request, res: Response) => {
     try {
       const setting = req.body;
-      const id = setting.productType;
-      const now = new Date();
-      
-      const existing = globalMarkupSettings.get(id);
-      const updatedSetting = {
-        ...setting,
-        id,
-        createdAt: existing?.createdAt || now,
-        updatedAt: now,
-      };
-      
-      globalMarkupSettings.set(id, updatedSetting);
-      console.log('✅ [Admin API] Global markup saved:', id, updatedSetting);
-      
+      const updatedSetting = await saveGlobalMarkupSetting(setting);
+      console.log('✅ [Admin API] Global markup saved:', setting.productType);
       res.json({ result: true, data: updatedSetting });
     } catch (error: any) {
       console.error('❌ [Admin API] Error saving global markup:', error);
@@ -381,10 +339,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Apply customizations if requested (for customer-facing pages)
       if (apply_customization !== false && data.result && Array.isArray(data.data)) {
-        const globalPulsaMarkup = globalMarkupSettings.get('pulsa');
+        // Fetch customizations from Firestore
+        const [globalPulsaMarkup, allCustomizations] = await Promise.all([
+          getGlobalMarkupSetting('pulsa'),
+          getAllProductCustomizations()
+        ]);
+        
+        // Create a map for quick lookup
+        const customizationsMap = new Map(allCustomizations.map(c => [c.productCode, c]));
         
         data.data = data.data.map((service: any) => {
-          const customization = productCustomizations.get(service.code);
+          const customization = customizationsMap.get(service.code);
           
           // Check visibility - if customization exists and is hidden, mark for filtering
           if (customization && customization.isVisible === false) {
@@ -484,10 +449,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
 
-      // Add customization info to each service
+      // Add customization info to each service (from Firestore)
       if (data.result && Array.isArray(data.data)) {
+        const allCustomizations = await getAllProductCustomizations();
+        const customizationsMap = new Map(allCustomizations.map(c => [c.productCode, c]));
+        
         data.data = data.data.map((service: any) => {
-          const customization = productCustomizations.get(service.code);
+          const customization = customizationsMap.get(service.code);
           return {
             ...service,
             customization: customization || null,

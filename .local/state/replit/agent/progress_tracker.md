@@ -17,24 +17,42 @@
 
 ## Current Status
 ✅ Workflow Running: Server successfully running on port 5000
-⚠️ Firebase Configuration: Missing environment variables (user needs to add API keys)
+✅ Firebase Configuration: Firebase Admin SDK initialized
 ✅ App Stability: STABLE
+✅ Firestore Integration: Product customizations now persist to database
 
-## 🎯 LATEST SESSION - December 12, 2025
+## 🎯 LATEST SESSION - December 14, 2025
 
-### All Migration Tasks Completed
-[x] 1. Install the required packages - ✅ DONE (tsx reinstalled)
-[x] 2. Restart the workflow to see if the project is working - ✅ DONE (workflow running on port 5000)
-[x] 3. Verify the project is working using the feedback tool - ✅ DONE
-[x] 4. Inform user the import is completed and mark as completed - ✅ DONE
+### Firestore Integration for Product Customizations
+[x] 1. Create Firestore service for product customizations (server/firestore.ts)
+[x] 2. Update server/routes.ts to use Firebase Admin SDK for Firestore instead of in-memory Maps
+[x] 3. Update AdminPulsaProducts.tsx to use the new Firestore service (already uses API routes)
+[x] 4. Test the implementation and verify data persists in Firestore
+
+### What Was Implemented
+- Created `server/firestore.ts` with Firestore CRUD operations:
+  - `getAllProductCustomizations()` - Get all product customizations
+  - `getProductCustomization(code)` - Get single customization by product code
+  - `saveProductCustomization(data)` - Save/update a customization
+  - `saveBulkProductCustomizations(data)` - Bulk save customizations
+  - `deleteProductCustomization(code)` - Delete a customization
+  - `getAllGlobalMarkupSettings()` - Get all global markup settings
+  - `getGlobalMarkupSetting(type)` - Get global markup by product type
+  - `saveGlobalMarkupSetting(data)` - Save/update global markup
+  - `initializeDefaultGlobalMarkup()` - Initialize default pulsa markup
+
+### Firestore Collections
+- `productCustomizations` - Stores individual product price/visibility settings
+- `globalMarkupSettings` - Stores global markup settings per product type
 
 ### Current Workflow Status
 ✅ **Workflow**: RUNNING (Start application)
 ✅ **Server**: Express serving on port 5000
-✅ **Command**: npm run dev
-✅ **Output Type**: webview
+✅ **Firestore**: Admin SDK initialized successfully
+✅ **Default Markup**: Pulsa markup (Rp 500 fixed) saved to Firestore
 
 ### Notes
-- Firebase requires user to add API keys (VITE_FIREBASE_API_KEY, etc.)
-- All core functionality is working
+- All product customizations now persist to Firebase Firestore
+- Global markup settings persist across server restarts
+- Admin panel changes will be saved permanently
 - Migration complete!
