@@ -16,7 +16,8 @@ import {
   Megaphone,
   Tag,
   ArrowRight,
-  Smartphone
+  Smartphone,
+  Wifi
 } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useRef, useEffect, useState } from "react";
@@ -74,6 +75,12 @@ export default function Home() {
       color: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400"
     },
     {
+      icon: Wifi,
+      label: "Kuota",
+      href: "/paket-kuota",
+      color: "bg-cyan-50 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400"
+    },
+    {
       icon: Wallet,
       label: "Sealdo",
       href: "/profile",
@@ -84,12 +91,6 @@ export default function Home() {
       label: "Voucher",
       href: "/profile",
       color: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-    },
-    {
-      icon: Megaphone,
-      label: "Promo",
-      href: "/layanan",
-      color: "bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400"
     },
     {
       icon: Briefcase,

@@ -247,6 +247,18 @@ export async function initializeDefaultGlobalMarkup(): Promise<void> {
       });
       console.log('📦 [Firestore] Default pulsa markup initialized');
     }
+
+    const kuotaMarkup = await getGlobalMarkupSetting('kuota');
+    
+    if (!kuotaMarkup) {
+      await saveGlobalMarkupSetting({
+        productType: 'kuota',
+        markupType: 'fixed',
+        markupValue: 500,
+        isActive: true,
+      });
+      console.log('📦 [Firestore] Default kuota markup initialized');
+    }
   } catch (error) {
     console.error('❌ [Firestore] Error initializing default markup:', error);
   }

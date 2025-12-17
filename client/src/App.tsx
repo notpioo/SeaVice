@@ -21,7 +21,9 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminVouchers from "./pages/AdminVouchers";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminPulsaProducts from "./pages/AdminPulsaProducts";
+import AdminKuotaProducts from "./pages/AdminKuotaProducts";
 import Pulsa from "./pages/Pulsa";
+import PaketKuota from "./pages/PaketKuota";
 import NotFound from "./pages/not-found";
 // PWA Update Prompt disabled to prevent reload loop
 // import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
@@ -176,9 +178,19 @@ function AppContent() {
               <AdminPulsaProducts />
             </ProtectedRoute>
           </Route>
+          <Route path="/admin/kuota-products">
+            <ProtectedRoute requiredRole="admin">
+              <AdminKuotaProducts />
+            </ProtectedRoute>
+          </Route>
           <Route path="/pulsa">
             <ProtectedRoute>
               <Pulsa />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/paket-kuota">
+            <ProtectedRoute>
+              <PaketKuota />
             </ProtectedRoute>
           </Route>
           <Route component={NotFound} />
