@@ -17,7 +17,10 @@ import {
   Tag,
   ArrowRight,
   Smartphone,
-  Wifi
+  Wifi,
+  Zap,
+  CreditCard,
+  Gift
 } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useRef, useEffect, useState } from "react";
@@ -81,6 +84,18 @@ export default function Home() {
       color: "bg-cyan-50 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-400"
     },
     {
+      icon: Zap,
+      label: "Token PLN",
+      href: "/token-pln",
+      color: "bg-yellow-50 text-yellow-600 dark:bg-yellow-950 dark:text-yellow-400"
+    },
+    {
+      icon: CreditCard,
+      label: "E-Wallet",
+      href: "/topup-ewallet",
+      color: "bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400"
+    },
+    {
       icon: Wallet,
       label: "Sealdo",
       href: "/profile",
@@ -89,8 +104,14 @@ export default function Home() {
     {
       icon: Tag,
       label: "Voucher",
-      href: "/profile",
+      href: "/layanan",
       color: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
+    },
+    {
+      icon: Gift,
+      label: "Promo",
+      href: "/layanan",
+      color: "bg-pink-50 text-pink-600 dark:bg-pink-950 dark:text-pink-400"
     },
     {
       icon: Briefcase,
@@ -146,7 +167,7 @@ export default function Home() {
 
         {/* Quick Buttons */}
         <section className="mb-8 md:mb-12">
-          <div className="grid grid-cols-5 gap-2 md:gap-3">
+          <div className="grid grid-cols-4 gap-3 md:gap-4">
             {quickButtons.map((button, index) => {
               const Icon = button.icon;
               return (

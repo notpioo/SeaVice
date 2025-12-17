@@ -102,22 +102,20 @@ function AppContent() {
       <Navbar />
       <main className="flex-grow pt-16 md:pt-20">
         <Switch>
-          <Route path="/">
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/beranda">
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          </Route>
+          {/* Public routes - accessible without login */}
+          <Route path="/" component={Home} />
+          <Route path="/beranda" component={Home} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route path="/services" component={Services} />
           <Route path="/layanan" component={Services} />
           <Route path="/services/:id" component={ServiceDetail} />
           <Route path="/layanan/:id" component={ServiceDetail} />
+          <Route path="/pulsa" component={Pulsa} />
+          <Route path="/paket-kuota" component={PaketKuota} />
+          <Route path="/profile" component={Profile} />
+          
+          {/* Protected routes - require login */}
           <Route path="/checkout/:serviceId">
             <ProtectedRoute>
               <Checkout />
@@ -148,11 +146,8 @@ function AppContent() {
               <Payment />
             </ProtectedRoute>
           </Route>
-          <Route path="/profile">
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          </Route>
+          
+          {/* Admin routes */}
           <Route path="/admin">
             <ProtectedRoute requiredRole="admin">
               <Admin />
@@ -181,16 +176,6 @@ function AppContent() {
           <Route path="/admin/kuota-products">
             <ProtectedRoute requiredRole="admin">
               <AdminKuotaProducts />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/pulsa">
-            <ProtectedRoute>
-              <Pulsa />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/paket-kuota">
-            <ProtectedRoute>
-              <PaketKuota />
             </ProtectedRoute>
           </Route>
           <Route component={NotFound} />

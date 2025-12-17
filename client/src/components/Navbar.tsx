@@ -46,6 +46,7 @@ export function Navbar({ className = "" }: { className?: string }) {
         { href: "/pesanan", label: "Pesanan Saya", icon: ShoppingBag },
       ]
     : [
+        { href: "/beranda", label: "Beranda", icon: LayoutDashboard },
         { href: "/layanan", label: "Layanan", icon: Briefcase },
       ];
 
@@ -54,7 +55,7 @@ export function Navbar({ className = "" }: { className?: string }) {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href={user ? "/beranda" : "/login"} data-testid="link-home">
+          <Link href="/beranda" data-testid="link-home">
             <div className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg transition-all cursor-pointer">
               <div className="text-2xl font-bold bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">
                 SeaVice

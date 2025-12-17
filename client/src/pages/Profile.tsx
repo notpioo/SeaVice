@@ -189,8 +189,117 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Silakan login terlebih dahulu</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        {/* Guest Header */}
+        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+          <div className="max-w-2xl mx-auto px-4 py-8">
+            <div className="flex flex-col items-center text-center gap-4">
+              <Avatar className="h-24 w-24 ring-4 ring-background shadow-lg">
+                <AvatarFallback className="bg-muted text-muted-foreground text-3xl">
+                  <User className="h-10 w-10" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">Selamat Datang!</h1>
+                <p className="text-muted-foreground mt-1">Masuk untuk mengakses semua fitur</p>
+              </div>
+              <div className="flex gap-3 mt-2">
+                <Link href="/login">
+                  <Button data-testid="button-guest-login">
+                    Masuk
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="outline" data-testid="button-guest-register">
+                    Daftar
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Guest Content */}
+        <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+          {/* Keuntungan Bergabung */}
+          <Card className="overflow-hidden shadow-sm">
+            <CardContent className="p-4">
+              <h2 className="font-semibold mb-4">Keuntungan Bergabung</h2>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <Wallet className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">SeaLdo Wallet</p>
+                    <p className="text-xs text-muted-foreground">Saldo digital untuk transaksi lebih mudah</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
+                    <Coins className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Poin Loyalitas</p>
+                    <p className="text-xs text-muted-foreground">Kumpulkan poin dari setiap transaksi</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                    <Ticket className="h-5 w-5 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Voucher Eksklusif</p>
+                    <p className="text-xs text-muted-foreground">Dapatkan diskon khusus member</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                    <Shield className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Transaksi Aman</p>
+                    <p className="text-xs text-muted-foreground">Data dan transaksi terenkripsi</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bantuan */}
+          <Card className="overflow-hidden shadow-sm">
+            <CardContent className="p-0">
+              <div className="divide-y divide-border">
+                <a
+                  href="https://wa.me/6281234567890"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <MessageCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">Chat dengan Kami</p>
+                    <p className="text-sm text-muted-foreground">Butuh bantuan? Hubungi CS</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </a>
+
+                <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
+                  <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <HelpCircle className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium">Pusat Bantuan</p>
+                    <p className="text-sm text-muted-foreground">FAQ & Panduan</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
