@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrasi Midtrans Sandbox</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .product-card { border: 1px solid #ccc; padding: 20px; max-width: 400px; margin-bottom: 20px; }
+        .product-card h2 { margin-top: 0; }
+        .product-card button { padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+        .product-card button:hover { background-color: #0056b3; }
+    </style>
+    <!-- Midtrans Snap.js Library -->
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="Mid-client-cV7oFNeuYxtQE-jO"></script>
+</head>
+<body>
+
+    <h1>Layanan Kami</h1>
+
+    <div class="product-card">
+        <h2>Layanan Premium Bulanan</h2>
+        <p>Akses penuh ke semua fitur premium kami selama satu bulan.</p>
+        <p>Harga: **Rp 50.000**</p>
+        <button id="pay-button">Bayar Sekarang</button>
+    </div>
+
+    <script>
+        document.getElementById('pay-button').onclick = function() {
+            // 1. Panggil backend untuk mendapatkan Snap Token
+            fetch('/create-transaction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // Kirim data yang diperlukan (jika ada)
+                body: JSON.stringify({ product_id: 'PROD001' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    // 2. Gunakan Snap Token untuk menampilkan pop-up Midtrans
+                    window.snap.pay(data.token, {
+                        onSuccess: function(result){
+                            /* You may add your own implementation here */
+                            alert("Pembayaran Berhasil! Lihat detail di console.");
+                            console.log(result);
+                        },
+                        onPending: function(result){
+                            /* You may add your own implementation here */
+                            alert("Pembayaran Tertunda! Lihat detail di console.");
+                            console.log(result);
+                        },
+                        onError: function(result){
+                            /* You may add your own implementation here */
+                            alert("Pembayaran Gagal! Lihat detail di console.");
+                            console.log(result);
+                        },
+                        onClose: function(){
+                            /* You may add your own implementation here */
+                            alert('Anda menutup pop-up pembayaran tanpa menyelesaikan transaksi.');
+                        }
+                    });
+                } else {
+                    alert('Gagal mendapatkan token transaksi dari server.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memproses permintaan.');
+            });
+        };
+    </script>
+
+</body>
+</html>
